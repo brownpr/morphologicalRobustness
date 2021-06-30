@@ -16,7 +16,7 @@ import nn
 # settings.json.
 
 
-class CreatureFile:
+class Creature:
     def __init__(self, genome, structure, index):
         # When called initializes creature file, setting default values to creature.
         # ARGUMENTS
@@ -396,7 +396,7 @@ class Population:
             # set genome to a random float between -2.0 and 2.0
             genome = np.round(np.random.uniform(-2, 2, 1), decimals=1)[0]
             # Create creature
-            creature = CreatureFile(genome, creature_strc, i)
+            creature = Creature(genome, creature_strc, i)
             # Update stillness to initial values
             creature.stiffness_array = init_stiff  # Initial Stiffness
 
