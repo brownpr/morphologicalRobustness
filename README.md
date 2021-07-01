@@ -1,5 +1,5 @@
 # Adapting morphology to cope with damage in soft robots.
-Genetic Algorithm to evaluate the fitness of a creature walking on a flat plane. After initial eveluation, creatures are inflicted damaged where eights, quarters and halfs are removed from the creature. These damaged morphologies are then evaluated and ran again. 
+Genetic Algorithm to evaluate the fitness of a creature walking on a flat plane. After initial eveluation, creatures are inflicted damaged where eights, quarters and halfs are removed from the creature. These damaged morphologies are then evaluated aswell.
 
 # How to run
 Download and install Evosoro.
