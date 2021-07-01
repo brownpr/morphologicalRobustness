@@ -20,6 +20,6 @@ If you are happy with the code and settings, simply run the code.
 
 `python initialize.py`
 
-# How to retrieve results
+# Retrieving Results
 
 A file called `generated_files` was created while running simulation. Within these you will see all the saved data for this simulation. 
