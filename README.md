@@ -17,7 +17,7 @@ While in the working directory run `python initialize.py`
 A folder called `generated_files` was created during the simulation. Within these you will see all the saved data for this simulation. 
 
 # Settings.json
-This file allows you to change most of the parameters of the system without having to search through the code.
+Sttings file, most variables have been placed into this settings folder.
 
 Within the Creature class you will see the initial creatures morphology, this array is of shape (z, x*y) where (x, y, z) are the creatures structure. If you change the length of the creatures base morphology you MUST update the `"creature_structure"` parameter within the settings file. 
 
@@ -46,6 +46,20 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"t"` for tanh AF and `"s"` for sigmoid. Output layer of ANN uses by default a                                    sigmoid AF                                                                                                    |
 | bounds               | List    | Upper and lower bounds for weights and biases, limitting them to this range.                                  |
 | noise                | Float   | Percentage of desired noise when 'evolving' ANN.                                                              |
+
+***
+
+| Structure          |Type     |Description                                                                                                    |
+| -------------------|---------|---------------------------------------------------------------------------------------------------------------|
+| creature_structure | List    | Shape of creature (x, y, z). I.e. (6, 6, 6) would be a 6 by 6 by 6 creature.                                  |
+| base_stiffness     | Int     | Baseline stiffness, used to initialize the creatures morphology.                                              |
+| max_stiffness      | Int     | Maximun stiffness that the creature can evolve to, stiffness values that surpass this value are reset to this value. |
+| morph_max          | Int     | Voxel material number to be asigned to voxels that equal or surpass max_stiffness.                            |
+| min_stiffness      | Int     | Minimum stiffness that the creature can evolve to, stiffness values bellow this value are reset to this value.|
+| morph_min          | Int     | Voxel material number to be asigned to voxels that equal or decrease bellow min_stiffness.                    |
+| morph_between      | Int     | Voxel material number to be asigned to voxels that are between min_stiffness and max_stiffness.               |
+| actuator_stiffness | Int     | Stiffness to be assigned to actuators.                                                                        |
+| actuator_morph     | Int     | Voxel material number to be assigned to actuator voxel.                                                       |
 
 ***
 
