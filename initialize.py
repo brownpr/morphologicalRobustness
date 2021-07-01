@@ -27,8 +27,11 @@ if __name__ == "__main__":
         # Start Genetic Algorithm
         pop.run_genetic_algorithm()
 
+        # Save population
+        pop.save_population()
+
         # Damage population
-        pop.damage_population()
+        pop.damage_population(10)
 
         print("Hello world")
     except KeyboardInterrupt:  # Allow for keybord interupt of script

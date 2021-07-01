@@ -51,6 +51,7 @@ class Creature:
         self.name = self.name = "_creature" + str(self.index)  # string, Set creature's name
 
         # Creature material properties (Initially set to defaults), please refer to settings.json to see definitions
+        self.vxa_file = None
         self.number_of_materials = mat_defaults["number_of_materials"]
         self.integration = mat_defaults["integration"]
         self.damping = mat_defaults["damping"]
@@ -110,11 +111,11 @@ class Creature:
         self.ke_file_name = "ke" + self.fitness_file_name + ".csv"
         self.strain_file_name = "strain" + self.fitness_file_name + ".csv"
 
-    def createVXA(self, generation, episode, number_of_materials=None, integration=None, damping=None, collision=None,
-                  features=None, stopConditions=None, drawSmooth=None, write_fitness=None, QhullTmpFile=None,
-                  CurvaturesTmpFile=None, numFixed=None, numForced=None, gravity=None, thermal=None, version=None,
-                  lattice=None, voxel=None, mat_type=None, mat_colour=None, mechanical_properties=None,
-                  compression_type=None, phase_offset=None, stiffness_array=None):
+    def create_vxa(self, generation, episode, number_of_materials=None, integration=None, damping=None, collision=None,
+                   features=None, stopConditions=None, drawSmooth=None, write_fitness=None, QhullTmpFile=None,
+                   CurvaturesTmpFile=None, numFixed=None, numForced=None, gravity=None, thermal=None, version=None,
+                   lattice=None, voxel=None, mat_type=None, mat_colour=None, mechanical_properties=None,
+                   compression_type=None, phase_offset=None, stiffness_array=None):
 
         # Using creature material properties, creates readable VXA file for execution on Voxelyze. See settings.json
         # for more explanation on parameters.
@@ -353,7 +354,7 @@ class Creature:
         return self
     
     def inflict_damage(self):
-        self.damage = DamageCreature
+        self.damage = DamageCreature(self)
 
 
 class Population:
@@ -368,18 +369,14 @@ class Population:
         self.population = {}                                                        # Evaluation population
         self.full_population = {}                                                   # Population of all creatures
         self.create_new_population((0, self.settings["parameters"]["pop_size"]))    # Create starting population
-
-        # Damaged population
-        self.damaged_population_eights = None
-        self.damaged_population_quarters = None
-        self.damaged_population_halfs = None
+        self.damaged_population = {}                                                # Damaged population
 
     def create_new_population(self, population_range):
         # ARGUMENTS:
         # - Range: 1x2 list, (a, b) where a is lower & b upper bound of range of creatures (for naming index)
 
         # RETURNS:
-        # population: dictionary of created creatures
+        # population: dictionary of created creatureself.
 
         # Set range parameters
         a, b = population_range
@@ -440,10 +437,10 @@ class Population:
 
         # Start simulations, after each simulation robot undergoes morphological change
         for episode in range(self.settings["parameters"]["ep_size"]):
-            for c_name, creature in self.population.items():
+            for creature in self.population.values():
 
                 # Create VXA file for creature
-                creature.vxa_file = creature.createVXA(generation=generation_number, episode=episode)
+                creature.create_vxa(generation=generation_number, episode=episode)
 
                 # Get file path variables and save vxa
                 vxa_fp = os.path.join(cwd, creature.current_file_name + ".vxa")
@@ -548,24 +545,30 @@ class Population:
         # Save data of the top preforming creatures throughout generations.
         # If pop not specified used self.population
         if population is None:
-            population = self.population
+            population = self.full_population
 
         # Sorted by creature performance
-        full_sorted_pop, top_creature = self.sort_population(population)
+        sorted_pop, top_creature = self.sort_population(population)
 
         # Save files
-        dict_sort_crts = [{ctr.name: ctr.fitness_eval} for ctr in full_sorted_pop]
+        dict_sort_crts = [{ctr.name: ctr.fitness_eval} for ctr in sorted_pop]
         with open("generated_files/creature_evolution.json", "w") as ctr_file:
             json.dump(dict_sort_crts, ctr_file, sort_keys=True, indent=4)
         ctr_file.close()
 
-    def damage_population(self, population):
-        # Inflicts damage to each member of the population
-        # If pop not specified used self.population
-        if population is None:
-            population = self.population
-        for creature in population:
-            creature.inflict_damage()
+    def damage_population(self, num_creatures_to_damage=None):
+        # Inflicts damage to each member of the population, if number_of_creatures_to_damage is given,
+        # the full_population is sorted and inputed to select the best creatures.
+        # If pop not specified used self.full_population
+        if num_creatures_to_damage is None:
+            damage_pop = self.full_population
+        else:
+            damage_pop_list, top_creature = self.sort_population(self.full_population)
+            damage_pop = {crt.name: crt for crt in damage_pop_list[0:num_creatures_to_damage]}
+
+        for crt_name, crt in damage_pop.items():
+            crt.inflict_damage()
+            self.damaged_population[crt_name] = crt
 
 
 class NeuralNet:
@@ -599,9 +602,9 @@ class NeuralNet:
 
 
 class DamageCreature:
-    def __init__(self, creature):
+    def __init__(self, undamaged_creature):
         # CURRENTLY ONLY IMPLEMENTED FOR EVEN STRUCTURED CREATURES
-        self.undamaged_creature = creature
+        self.undamaged_creature = undamaged_creature
 
         self.eight_damage = None
         self.quarter_damage = None
@@ -728,9 +731,9 @@ class DamageCreature:
     def remove_halfs(self):
 
         # get voxel dimensions
-        x_voxels = self.undamaged_creature[0]
-        y_voxels = self.undamaged_creature[1]
-        z_voxels = self.undamaged_creature[2]
+        x_voxels = self.undamaged_creature.structure[0]
+        y_voxels = self.undamaged_creature.structure[1]
+        z_voxels = self.undamaged_creature.structure[2]
 
         # set empty arrays for the four quarters of the damage
         damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
@@ -764,7 +767,7 @@ class DamageCreature:
         if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
             # Cube region with even lengths x_voxels, y_voxels and z_voxels
             for k in range(z_voxels):
-                row = self.undamaged_creature[k]
+                row = self.undamaged_creature.morphology[k]
                 if k < z_voxels / 2:
                     row_array = np.array(np.array_split(row, x_voxels))
 
@@ -831,9 +834,9 @@ class DamageCreature:
     def remove_quarters(self):
 
         # get voxel dimensions
-        x_voxels = self.undamaged_creature[0]
-        y_voxels = self.undamaged_creature[1]
-        z_voxels = self.undamaged_creature[2]
+        x_voxels = self.undamaged_creature.structure[0]
+        y_voxels = self.undamaged_creature.structure[1]
+        z_voxels = self.undamaged_creature.structure[2]
 
         # set empty arrays for the four quarters of the damage
         damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
@@ -873,7 +876,7 @@ class DamageCreature:
         if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
             # Cube region with even lengths x_voxels, y_voxels and z_voxels
             for k in range(z_voxels):
-                row = self.undamaged_creature[k]
+                row = self.undamaged_creature.morphology[k]
 
                 if k < z_voxels / 2:
                     # convert to array
