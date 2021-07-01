@@ -153,7 +153,7 @@ class Evosoro:
 
         stiff_text = self.stiffness_creator(creature.stiffness_array)
 
-        offset_text = self.offset_creator(creature.phase_offset)
+        offset_text = self.offset_creator()
 
         end_text = self.end_creator()
 
@@ -502,10 +502,19 @@ class Evosoro:
 
         return structure_text
 
-    def offset_creator(self, offset_array):
-
+    def offset_creator(self):
         text_array = []
-        for row in offset_array:
+        offset_base = np.round([np.multiply(1, (-1) * yi * self.phase_offset) for yi in range(self.structure[0])],
+                               decimals=1)
+        offset_vec = offset_base
+        for i in range(self.structure[1] - 1):
+            offset_vec = np.concatenate((offset_vec, offset_base))
+
+        offset_map = offset_vec
+        for j in range(self.structure[2] - 1):
+            offset_map = np.vstack((offset_map, offset_vec))
+
+        for row in offset_map:
             temp_text = ",".join([str(elem) for elem in row])
             text_array.append(temp_text)
 

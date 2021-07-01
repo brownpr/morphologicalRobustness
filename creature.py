@@ -6,6 +6,8 @@ import time
 import datetime as dt
 import shutil
 import operator
+import random
+from copy import deepcopy
 
 import numpy as np
 
@@ -59,7 +61,7 @@ class Creature:
         # evolution
         self.neural_net = None              # class, uses NeuralNet class to create nn for creature
         self.evolution = {}                 # dict, used to save creatures evolutionary history
-        self.damage = None                  # dict, damaged morphology of creature
+        self.damaged = False                # bool, has creature been damaged?
 
     def update_creature_info(self, generation, episode):
         # Updates basic creature information
@@ -212,9 +214,371 @@ class Creature:
         # Update neural network
         self.neural_net.update_neural_net()
         return self
-    
-    def inflict_damage(self):
-        self.damage = DamageCreature(self)
+
+    def remove_eighths(self):
+        # Removes eight sections of the creature. Updates self.eight_damage_morph dictionary
+        # ARGUMENTS:
+        # - creature                class (creature), creature information
+
+        # get voxel dimensions
+        x_voxels = self.phenotype.structure[0]
+        y_voxels = self.phenotype.structure[1]
+        z_voxels = self.phenotype.structure[2]
+
+        # set empty arrays for the four quarters of the damage
+        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
+
+        # set empty arrays for damage of the eighths
+        damaged_morph_1 = []
+        damaged_morph_2 = []
+        damaged_morph_3 = []
+        damaged_morph_4 = []
+        damaged_morph_5 = []
+        damaged_morph_6 = []
+        damaged_morph_7 = []
+        damaged_morph_8 = []
+
+        # setting damaged areas
+        for ii in range(y_voxels):
+            if ii < y_voxels / 2:
+                for jj in range(x_voxels):
+                    if jj < x_voxels / 2:
+                        damage_1[ii, jj] = 0
+                    else:
+                        damage_2[ii, jj] = 0
+            else:
+                for jj in range(x_voxels):
+                    if jj < x_voxels / 2:
+                        damage_3[ii, jj] = 0
+                    else:
+                        damage_4[ii, jj] = 0
+
+        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
+            # Cube region with even lengths x_voxels, y_voxels and z_voxels
+            for k in range(z_voxels):
+                row = self.phenotype.morphology[k]
+
+                if k < z_voxels / 2:
+                    # convert to array
+                    row_array = np.array(np.array_split(row, x_voxels))
+
+                    # Apply damage to each row
+                    row_damage_1 = np.multiply(row_array, damage_1)
+                    row_damage_2 = np.multiply(row_array, damage_2)
+                    row_damage_3 = np.multiply(row_array, damage_3)
+                    row_damage_4 = np.multiply(row_array, damage_4)
+
+                    # Convert to list
+                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
+                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
+                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
+                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
+
+                    # Apply damage to layers
+                    damaged_morph_1.append(row_damg_1)
+                    damaged_morph_2.append(row_damg_2)
+                    damaged_morph_3.append(row_damg_3)
+                    damaged_morph_4.append(row_damg_4)
+                    # Append unaffected layers
+                    damaged_morph_5.append(row.tolist())
+                    damaged_morph_6.append(row.tolist())
+                    damaged_morph_7.append(row.tolist())
+                    damaged_morph_8.append(row.tolist())
+
+                else:
+                    # convert to array
+                    row_array = np.array(np.array_split(row, x_voxels))
+
+                    # Apply damage to each row
+                    row_damage_5 = np.multiply(row_array, damage_1)
+                    row_damage_6 = np.multiply(row_array, damage_2)
+                    row_damage_7 = np.multiply(row_array, damage_3)
+                    row_damage_8 = np.multiply(row_array, damage_4)
+
+                    # Convert to list
+                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
+                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
+                    row_damg_7 = [elem for lst in row_damage_7.tolist() for elem in lst]
+                    row_damg_8 = [elem for lst in row_damage_8.tolist() for elem in lst]
+
+                    # Append unaffected layers
+                    damaged_morph_1.append(row.tolist())
+                    damaged_morph_2.append(row.tolist())
+                    damaged_morph_3.append(row.tolist())
+                    damaged_morph_4.append(row.tolist())
+                    # Apply damage to layers
+                    damaged_morph_5.append(row_damg_5)
+                    damaged_morph_6.append(row_damg_6)
+                    damaged_morph_7.append(row_damg_7)
+                    damaged_morph_8.append(row_damg_8)
+
+        creatures_eighths_damage = {"eighths_creature_1": damaged_morph_1,
+                                    "eighths_creature_2": damaged_morph_2,
+                                    "eighths_creature_3": damaged_morph_3,
+                                    "eighths_creature_4": damaged_morph_4,
+                                    "eighths_creature_5": damaged_morph_5,
+                                    "eighths_creature_6": damaged_morph_6,
+                                    "eighths_creature_7": damaged_morph_7,
+                                    "eighths_creature_8": damaged_morph_8
+                                    }
+
+        # Update creature morphology and set stiffness to min_stiffness if morphology is at 0
+        self.phenotype.morphology = np.array(random.choice(list(creatures_eighths_damage.values())))
+        self.stiffness_array = np.where(self.phenotype.morphology == 0, self.settings["structure"]["min_stiffness"],
+                                        self.stiffness_array)
+
+    def remove_halfs(self):
+
+        # get voxel dimensions
+        x_voxels = self.phenotype.structure[0]
+        y_voxels = self.phenotype.structure[1]
+        z_voxels = self.phenotype.structure[2]
+
+        # set empty arrays for the four quarters of the damage
+        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_5 = np.zeros([x_voxels, y_voxels], dtype=int)
+
+        # set empty arrays for damage of the halfs
+        damaged_morph_1 = []
+        damaged_morph_2 = []
+        damaged_morph_3 = []
+        damaged_morph_4 = []
+        damaged_morph_5 = []
+        damaged_morph_6 = []
+
+        for ii in range(y_voxels):
+            if ii < y_voxels / 2:
+                for jj in range(x_voxels):
+                    if jj < x_voxels / 2:
+                        damage_1[ii, jj] = 0
+                    else:
+                        damage_2[ii, jj] = 0
+            else:
+                for jj in range(x_voxels):
+                    if jj < x_voxels / 2:
+                        damage_3[ii, jj] = 0
+                    else:
+                        damage_4[ii, jj] = 0
+
+        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
+            # Cube region with even lengths x_voxels, y_voxels and z_voxels
+            for k in range(z_voxels):
+                row = self.phenotype.morphology[k]
+                if k < z_voxels / 2:
+                    row_array = np.array(np.array_split(row, x_voxels))
+
+                    # Apply damage to each row
+                    row_damage_1 = np.multiply(row_array, damage_5)
+                    row_damage_2 = np.multiply(np.multiply(row_array, damage_1), damage_2)
+                    row_damage_3 = np.multiply(np.multiply(row_array, damage_4), damage_3)
+                    row_damage_4 = np.multiply(np.multiply(row_array, damage_1), damage_3)
+                    row_damage_5 = np.multiply(np.multiply(row_array, damage_2), damage_4)
+
+                    # Convert to list
+                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
+                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
+                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
+                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
+                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
+
+                    # Apply damage to layers
+                    damaged_morph_1.append(row_damg_1)
+                    damaged_morph_2.append(row_damg_2)
+                    damaged_morph_3.append(row_damg_3)
+                    damaged_morph_4.append(row_damg_4)
+                    damaged_morph_5.append(row_damg_5)
+                    # Append unaffected layers
+                    damaged_morph_6.append(row.tolist())
+
+                else:
+                    # convert to array
+                    row_array = np.array(np.array_split(row, x_voxels))
+
+                    # Apply damage to each row
+                    row_damage_2 = np.multiply(np.multiply(row_array, damage_1), damage_2)
+                    row_damage_3 = np.multiply(np.multiply(row_array, damage_4), damage_3)
+                    row_damage_4 = np.multiply(np.multiply(row_array, damage_1), damage_3)
+                    row_damage_5 = np.multiply(np.multiply(row_array, damage_2), damage_4)
+                    row_damage_6 = np.multiply(row_array, damage_5)
+
+                    # Convert to list
+                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
+                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
+                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
+                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
+                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
+
+                    # Append unaffected layers
+                    damaged_morph_1.append(row.tolist())
+                    # Apply damage to layers
+                    damaged_morph_2.append(row_damg_2)
+                    damaged_morph_3.append(row_damg_3)
+                    damaged_morph_4.append(row_damg_4)
+                    damaged_morph_5.append(row_damg_5)
+                    damaged_morph_6.append(row_damg_6)
+
+        creatures_halfs_damage = {"half_creature_1": damaged_morph_1,
+                                  "half_creature_2": damaged_morph_2,
+                                  "half_creature_3": damaged_morph_3,
+                                  "half_creature_4": damaged_morph_4,
+                                  "half_creature_5": damaged_morph_5,
+                                  "half_creature_6": damaged_morph_6,
+                                  }
+
+        # Update creature morphology and set stiffness to min_stiffness if morphology is at 0
+        self.phenotype.morphology = np.array(random.choice(list(creatures_halfs_damage.values())))
+        self.stiffness_array = np.where(self.phenotype.morphology == 0, self.settings["structure"]["min_stiffness"],
+                                        self.stiffness_array)
+
+    def remove_quarters(self):
+
+        # get voxel dimensions
+        x_voxels = self.phenotype.structure[0]
+        y_voxels = self.phenotype.structure[1]
+        z_voxels = self.phenotype.structure[2]
+
+        # set empty arrays for the four quarters of the damage
+        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
+        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
+
+        # set empty arrays for damage of the quarters
+        damaged_morph_1 = []
+        damaged_morph_2 = []
+        damaged_morph_3 = []
+        damaged_morph_4 = []
+        damaged_morph_5 = []
+        damaged_morph_6 = []
+        damaged_morph_7 = []
+        damaged_morph_8 = []
+        damaged_morph_9 = []
+        damaged_morph_10 = []
+        damaged_morph_11 = []
+        damaged_morph_12 = []
+
+        # setting damaged areas
+        for ii in range(y_voxels):
+            if ii < y_voxels / 2:
+                for jj in range(x_voxels):
+                    if jj < x_voxels / 2:
+                        damage_1[ii, jj] = 0
+                    else:
+                        damage_2[ii, jj] = 0
+            else:
+                for jj in range(x_voxels):
+                    if jj < x_voxels / 2:
+                        damage_3[ii, jj] = 0
+                    else:
+                        damage_4[ii, jj] = 0
+
+        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
+            # Cube region with even lengths x_voxels, y_voxels and z_voxels
+            for k in range(z_voxels):
+                row = self.phenotype.morphology[k]
+
+                if k < z_voxels / 2:
+                    # convert to array
+                    row_array = np.array(np.array_split(row, x_voxels))
+
+                    # Apply damage to each row
+                    row_damage_1 = np.multiply(row_array, damage_1)
+                    row_damage_2 = np.multiply(row_array, damage_2)
+                    row_damage_3 = np.multiply(row_array, damage_3)
+                    row_damage_4 = np.multiply(row_array, damage_4)
+                    row_damage_5 = np.multiply(np.multiply(row_array, damage_1), damage_3)
+                    row_damage_6 = np.multiply(np.multiply(row_array, damage_2), damage_4)
+                    row_damage_9 = np.multiply(np.multiply(row_array, damage_1), damage_2)
+                    row_damage_10 = np.multiply(np.multiply(row_array, damage_3), damage_4)
+
+                    # Convert to list
+                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
+                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
+                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
+                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
+                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
+                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
+                    row_damg_9 = [elem for lst in row_damage_9.tolist() for elem in lst]
+                    row_damg_10 = [elem for lst in row_damage_10.tolist() for elem in lst]
+
+                    # Apply damage to layers
+                    damaged_morph_1.append(row_damg_1)
+                    damaged_morph_2.append(row_damg_2)
+                    damaged_morph_3.append(row_damg_3)
+                    damaged_morph_4.append(row_damg_4)
+                    damaged_morph_5.append(row_damg_5)
+                    damaged_morph_6.append(row_damg_6)
+                    damaged_morph_9.append(row_damg_9)
+                    damaged_morph_10.append(row_damg_10)
+                    # Append unaffected layers
+                    damaged_morph_7.append(row.tolist())
+                    damaged_morph_8.append(row.tolist())
+                    damaged_morph_11.append(row.tolist())
+                    damaged_morph_12.append(row.tolist())
+
+                else:
+                    # convert to array
+                    row_array = np.array(np.array_split(row, x_voxels))
+
+                    # Apply damage to each row
+                    row_damage_1 = np.multiply(row_array, damage_1)
+                    row_damage_2 = np.multiply(row_array, damage_2)
+                    row_damage_3 = np.multiply(row_array, damage_3)
+                    row_damage_4 = np.multiply(row_array, damage_4)
+                    row_damage_7 = np.multiply(np.multiply(row_array, damage_1), damage_3)
+                    row_damage_8 = np.multiply(np.multiply(row_array, damage_2), damage_4)
+                    row_damage_11 = np.multiply(np.multiply(row_array, damage_1), damage_2)
+                    row_damage_12 = np.multiply(np.multiply(row_array, damage_3), damage_4)
+
+                    # Convert to list
+                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
+                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
+                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
+                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
+                    row_damg_7 = [elem for lst in row_damage_7.tolist() for elem in lst]
+                    row_damg_8 = [elem for lst in row_damage_8.tolist() for elem in lst]
+                    row_damg_11 = [elem for lst in row_damage_11.tolist() for elem in lst]
+                    row_damg_12 = [elem for lst in row_damage_12.tolist() for elem in lst]
+
+                    # Append unaffected layers
+                    damaged_morph_5.append(row.tolist())
+                    damaged_morph_6.append(row.tolist())
+                    damaged_morph_9.append(row.tolist())
+                    damaged_morph_10.append(row.tolist())
+                    # Apply damage to layers
+                    damaged_morph_1.append(row_damg_1)
+                    damaged_morph_2.append(row_damg_2)
+                    damaged_morph_3.append(row_damg_3)
+                    damaged_morph_4.append(row_damg_4)
+                    damaged_morph_7.append(row_damg_7)
+                    damaged_morph_8.append(row_damg_8)
+                    damaged_morph_11.append(row_damg_11)
+                    damaged_morph_12.append(row_damg_12)
+
+        creatures_quarters_damage = {"quarters_creature_1": damaged_morph_1,
+                                     "quarters_creature_2": damaged_morph_2,
+                                     "quarters_creature_3": damaged_morph_3,
+                                     "quarters_creature_4": damaged_morph_4,
+                                     "quarters_creature_5": damaged_morph_5,
+                                     "quarters_creature_6": damaged_morph_6,
+                                     "quarters_creature_7": damaged_morph_7,
+                                     "quarters_creature_8": damaged_morph_8,
+                                     "quarters_creature_9": damaged_morph_9,
+                                     "quarters_creature_10": damaged_morph_10,
+                                     "quarters_creature_11": damaged_morph_11,
+                                     "quarters_creature_12": damaged_morph_12
+                                     }
+
+        # Update creature morphology and set stiffness to min_stiffness if morphology is at 0
+        self.phenotype.morphology = np.array(random.choice(list(creatures_quarters_damage.values())))
+        self.stiffness_array = np.where(self.phenotype.morphology == 0, self.settings["structure"]["min_stiffness"],
+                                        self.stiffness_array)
 
 
 class Population:
@@ -284,7 +648,7 @@ class Population:
 
         # Working directories variables
         cwd = os.getcwd()
-        gfd = os.path.join(os.getcwd(), "old/generated_files")  # Generated files directory
+        gfd = os.path.join(os.getcwd(), "generated_files")  # Generated files directory
 
         # Start simulations, after each simulation robot undergoes morphological change
         for episode in range(self.settings["parameters"]["ep_size"]):
@@ -296,7 +660,7 @@ class Population:
                 # Get file path variables and save vxa
                 vxa_fp = os.path.join(cwd, creature.current_file_name + ".vxa")
                 new_file = open(vxa_fp, "w")
-                new_file.write(creature.vxa_file)
+                new_file.write(creature.phenotype.vxa_file)
                 new_file.close()
 
                 # launch simulation
@@ -403,7 +767,7 @@ class Population:
 
         # Save files
         dict_sort_crts = [{ctr.name: ctr.fitness_eval} for ctr in sorted_pop]
-        with open("old/generated_files/creature_evolution.json", "w") as ctr_file:
+        with open("generated_files/creature_evolution.json", "w") as ctr_file:
             json.dump(dict_sort_crts, ctr_file, sort_keys=True, indent=4)
         ctr_file.close()
 
@@ -418,376 +782,25 @@ class Population:
             damage_pop = {crt.name: crt for crt in damage_pop_list[0:num_creatures_to_damage]}
 
         for crt_name, crt in damage_pop.items():
-            crt.inflict_damage()
-            self.damaged_population[crt_name] = crt
+            # Copy class
+            eighths_ctr = deepcopy(crt)
+            quarter_ctr = deepcopy(crt)
+            half_ctr = deepcopy(crt)
+
+            # rename copied creature
+            eighths_ctr.name = crt_name + "_eighths_damage"
+            quarter_ctr.name = crt_name + "_quarter_damage"
+            half_ctr.name = crt_name + "_half_damage"
+
+            # Inflict damage to creature (creates new morphology and stiffness array)
+            eighths_ctr.remove_eighths()
+            quarter_ctr.remove_halfs()
+            half_ctr.remove_halfs()
+
+            # Save into self.damage_population dict
+            self.damaged_population[eighths_ctr.name] = eighths_ctr
+            self.damaged_population[quarter_ctr.name] = quarter_ctr
+            self.damaged_population[half_ctr.name] = half_ctr
 
 
-class DamageCreature:
-    def __init__(self, undamaged_creature):
-        # CURRENTLY ONLY IMPLEMENTED FOR EVEN STRUCTURED CREATURES
 
-        self.eight_damage = None
-        self.quarter_damage = None
-        self.half_damage = None
-
-        # Damage creature
-        self.remove_eighths(undamaged_creature)
-        self.remove_halfs(undamaged_creature)
-        self.remove_quarters(undamaged_creature)
-
-    def remove_eighths(self, undamaged_creature):
-        # Removes eight sections of the creature. Updates self.eight_damage dictionary
-        # ARGUMENTS:
-        # - creature                class (creature), creature information
-
-        # get voxel dimensions
-        x_voxels = undamaged_creature.structure[0]
-        y_voxels = undamaged_creature.structure[1]
-        z_voxels = undamaged_creature.structure[2]
-
-        # set empty arrays for the four quarters of the damage
-        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
-
-        # set empty arrays for damage of the eighths
-        damaged_morph_1 = []
-        damaged_morph_2 = []
-        damaged_morph_3 = []
-        damaged_morph_4 = []
-        damaged_morph_5 = []
-        damaged_morph_6 = []
-        damaged_morph_7 = []
-        damaged_morph_8 = []
-
-        # setting damaged areas
-        for ii in range(y_voxels):
-            if ii < y_voxels / 2:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_1[ii, jj] = 0
-                    else:
-                        damage_2[ii, jj] = 0
-            else:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_3[ii, jj] = 0
-                    else:
-                        damage_4[ii, jj] = 0
-
-        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
-            # Cube region with even lengths x_voxels, y_voxels and z_voxels
-            for k in range(z_voxels):
-                row = undamaged_creature.morphology[k]
-
-                if k < z_voxels / 2:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_1)
-                    row_damage_2 = np.multiply(row_array, damage_2)
-                    row_damage_3 = np.multiply(row_array, damage_3)
-                    row_damage_4 = np.multiply(row_array, damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    # Append unaffected layers
-                    damaged_morph_5.append(row.tolist())
-                    damaged_morph_6.append(row.tolist())
-                    damaged_morph_7.append(row.tolist())
-                    damaged_morph_8.append(row.tolist())
-
-                else:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_5 = np.multiply(row_array, damage_1)
-                    row_damage_6 = np.multiply(row_array, damage_2)
-                    row_damage_7 = np.multiply(row_array, damage_3)
-                    row_damage_8 = np.multiply(row_array, damage_4)
-
-                    # Convert to list
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
-                    row_damg_7 = [elem for lst in row_damage_7.tolist() for elem in lst]
-                    row_damg_8 = [elem for lst in row_damage_8.tolist() for elem in lst]
-
-                    # Append unaffected layers
-                    damaged_morph_1.append(row.tolist())
-                    damaged_morph_2.append(row.tolist())
-                    damaged_morph_3.append(row.tolist())
-                    damaged_morph_4.append(row.tolist())
-                    # Apply damage to layers
-                    damaged_morph_5.append(row_damg_5)
-                    damaged_morph_6.append(row_damg_6)
-                    damaged_morph_7.append(row_damg_7)
-                    damaged_morph_8.append(row_damg_8)
-
-        creatures_eighths_damage = {"eighths_creature_1": damaged_morph_1,
-                                    "eighths_creature_2": damaged_morph_2,
-                                    "eighths_creature_3": damaged_morph_3,
-                                    "eighths_creature_4": damaged_morph_4,
-                                    "eighths_creature_5": damaged_morph_5,
-                                    "eighths_creature_6": damaged_morph_6,
-                                    "eighths_creature_7": damaged_morph_7,
-                                    "eighths_creature_8": damaged_morph_8
-                                    }
-
-        # Assign eight damage
-        self.eight_damage = creatures_eighths_damage
-
-    def remove_halfs(self, undamaged_creature):
-
-        # get voxel dimensions
-        x_voxels = undamaged_creature.structure[0]
-        y_voxels = undamaged_creature.structure[1]
-        z_voxels = undamaged_creature.structure[2]
-
-        # set empty arrays for the four quarters of the damage
-        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_5 = np.zeros([x_voxels, y_voxels], dtype=int)
-
-        # set empty arrays for damage of the halfs
-        damaged_morph_1 = []
-        damaged_morph_2 = []
-        damaged_morph_3 = []
-        damaged_morph_4 = []
-        damaged_morph_5 = []
-        damaged_morph_6 = []
-
-        for ii in range(y_voxels):
-            if ii < y_voxels / 2:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_1[ii, jj] = 0
-                    else:
-                        damage_2[ii, jj] = 0
-            else:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_3[ii, jj] = 0
-                    else:
-                        damage_4[ii, jj] = 0
-
-        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
-            # Cube region with even lengths x_voxels, y_voxels and z_voxels
-            for k in range(z_voxels):
-                row = undamaged_creature.morphology[k]
-                if k < z_voxels / 2:
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_5)
-                    row_damage_2 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_3 = np.multiply(np.multiply(row_array, damage_4), damage_3)
-                    row_damage_4 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_5 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_5.append(row_damg_5)
-                    # Append unaffected layers
-                    damaged_morph_6.append(row.tolist())
-
-                else:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_2 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_3 = np.multiply(np.multiply(row_array, damage_4), damage_3)
-                    row_damage_4 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_5 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-                    row_damage_6 = np.multiply(row_array, damage_5)
-
-                    # Convert to list
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
-
-                    # Append unaffected layers
-                    damaged_morph_1.append(row.tolist())
-                    # Apply damage to layers
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_5.append(row_damg_5)
-                    damaged_morph_6.append(row_damg_6)
-
-        creatures_halfs_damage = {"half_creature_1": damaged_morph_1,
-                                  "half_creature_2": damaged_morph_2,
-                                  "half_creature_3": damaged_morph_3,
-                                  "half_creature_4": damaged_morph_4,
-                                  "half_creature_5": damaged_morph_5,
-                                  "half_creature_6": damaged_morph_6,
-                                  }
-
-        self.half_damage = creatures_halfs_damage
-
-    def remove_quarters(self, undamaged_creature):
-
-        # get voxel dimensions
-        x_voxels = undamaged_creature.structure[0]
-        y_voxels = undamaged_creature.structure[1]
-        z_voxels = undamaged_creature.structure[2]
-
-        # set empty arrays for the four quarters of the damage
-        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
-
-        # set empty arrays for damage of the quarters
-        damaged_morph_1 = []
-        damaged_morph_2 = []
-        damaged_morph_3 = []
-        damaged_morph_4 = []
-        damaged_morph_5 = []
-        damaged_morph_6 = []
-        damaged_morph_7 = []
-        damaged_morph_8 = []
-        damaged_morph_9 = []
-        damaged_morph_10 = []
-        damaged_morph_11 = []
-        damaged_morph_12 = []
-
-        # setting damaged areas
-        for ii in range(y_voxels):
-            if ii < y_voxels / 2:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_1[ii, jj] = 0
-                    else:
-                        damage_2[ii, jj] = 0
-            else:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_3[ii, jj] = 0
-                    else:
-                        damage_4[ii, jj] = 0
-
-        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
-            # Cube region with even lengths x_voxels, y_voxels and z_voxels
-            for k in range(z_voxels):
-                row = undamaged_creature.morphology[k]
-
-                if k < z_voxels / 2:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_1)
-                    row_damage_2 = np.multiply(row_array, damage_2)
-                    row_damage_3 = np.multiply(row_array, damage_3)
-                    row_damage_4 = np.multiply(row_array, damage_4)
-                    row_damage_5 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_6 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-                    row_damage_9 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_10 = np.multiply(np.multiply(row_array, damage_3), damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
-                    row_damg_9 = [elem for lst in row_damage_9.tolist() for elem in lst]
-                    row_damg_10 = [elem for lst in row_damage_10.tolist() for elem in lst]
-
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_5.append(row_damg_5)
-                    damaged_morph_6.append(row_damg_6)
-                    damaged_morph_9.append(row_damg_9)
-                    damaged_morph_10.append(row_damg_10)
-                    # Append unaffected layers
-                    damaged_morph_7.append(row.tolist())
-                    damaged_morph_8.append(row.tolist())
-                    damaged_morph_11.append(row.tolist())
-                    damaged_morph_12.append(row.tolist())
-
-                else:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_1)
-                    row_damage_2 = np.multiply(row_array, damage_2)
-                    row_damage_3 = np.multiply(row_array, damage_3)
-                    row_damage_4 = np.multiply(row_array, damage_4)
-                    row_damage_7 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_8 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-                    row_damage_11 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_12 = np.multiply(np.multiply(row_array, damage_3), damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_7 = [elem for lst in row_damage_7.tolist() for elem in lst]
-                    row_damg_8 = [elem for lst in row_damage_8.tolist() for elem in lst]
-                    row_damg_11 = [elem for lst in row_damage_11.tolist() for elem in lst]
-                    row_damg_12 = [elem for lst in row_damage_12.tolist() for elem in lst]
-
-                    # Append unaffected layers
-                    damaged_morph_5.append(row.tolist())
-                    damaged_morph_6.append(row.tolist())
-                    damaged_morph_9.append(row.tolist())
-                    damaged_morph_10.append(row.tolist())
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_7.append(row_damg_7)
-                    damaged_morph_8.append(row_damg_8)
-                    damaged_morph_11.append(row_damg_11)
-                    damaged_morph_12.append(row_damg_12)
-
-        creatures_quarters_damage = {"quarters_creature_1": damaged_morph_1,
-                                     "quarters_creature_2": damaged_morph_2,
-                                     "quarters_creature_3": damaged_morph_3,
-                                     "quarters_creature_4": damaged_morph_4,
-                                     "quarters_creature_5": damaged_morph_5,
-                                     "quarters_creature_6": damaged_morph_6,
-                                     "quarters_creature_7": damaged_morph_7,
-                                     "quarters_creature_8": damaged_morph_8,
-                                     "quarters_creature_9": damaged_morph_9,
-                                     "quarters_creature_10": damaged_morph_10,
-                                     "quarters_creature_11": damaged_morph_11,
-                                     "quarters_creature_12": damaged_morph_12
-                                     }
-
-        self.quarter_damage = creatures_quarters_damage

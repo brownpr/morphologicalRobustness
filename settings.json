@@ -2,13 +2,14 @@
       "evosoro_path": "./sculpting/voxelyze",
       "parameters": {
             "pop_size": 5,
-            "ep_size": 10,
-            "gen_size": 10,
+            "ep_size": 15,
+            "gen_size": 15,
             "top": 1,
             "evolve": 2
       },
       "neural_network_parameters": {
             "activation_function": "t",
+            "num_inputs": 3,
             "num_outputs": 1,
             "num_hidden_layers": 16,
             "bounds": [-0.5, 0.5],

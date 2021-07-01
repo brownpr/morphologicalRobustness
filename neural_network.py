@@ -15,21 +15,14 @@ class NeuralNet:
 
         # Define NN parameters here
         self.activation_function = self.settings["activation_function"]     # desired activation function, than or sigmoid
-        self.num_outputs = self.settings["num_outputs"]                     # number of desired outputs from the nn
-        self.num_hidden_layers = self.settings["num_hidden_layers"]         # number of nodes in hidden layers
+        self.n_x = self.settings["num_inputs"]                             # number of desired inputs to the nn
+        self.n_y = self.settings["num_outputs"]                             # number of desired outputs from the nn
+        self.n_h = self.settings["num_hidden_layers"]                       # number of nodes in hidden layers
         self.bounds = self.settings["bounds"]                               # upper and lower bounds for parameters
         self.noise = self.settings["noise"]                                 # desired noise in NN
 
         # Create NN
-        self.parameters = self.initialize_parameters(num_inputs, self.num_outputs, self.num_hidden_layers, self.bounds)
-
-    def forward_propagation(self, inputs):
-        outputs = self.forward_propagation(inputs, self.parameters, self.activation_function)
-        return outputs
-
-    def update_neural_net(self):
-        # Update parameters
-        self.parameters = self.update_params_gaussian(self.parameters, self.bounds, self.noise)
+        self.parameters = self.initialize_parameters()
 
     def sigmoid(self, X):
         # calculates sigmoid
@@ -46,7 +39,7 @@ class NeuralNet:
 
         return S
 
-    def initialize_parameters(self, n_x, n_y, n_h, bounds):
+    def initialize_parameters(self):
         # Sets initial weight matrixes to random values between plus and minus the bounds.
         # Biases initialised to zeros.
 
@@ -64,31 +57,31 @@ class NeuralNet:
         # b2: bias matrix with shape (n_y, 1)
 
         # Assert correct inputs
-        assert len(bounds) == 2
-        assert isinstance(n_x, int)
-        assert isinstance(n_h, int)
-        assert isinstance(n_y, int)
+        assert len(self.bounds) == 2
+        assert isinstance(self.n_x, int)
+        assert isinstance(self.n_h, int)
+        assert isinstance(self.n_y, int)
 
         # set random seed for repeatability
         # np.random.seed(5)
 
         # Initialize matrixes:
-        w1 = np.random.uniform(low=bounds[0], high=bounds[1], size=(n_h, n_x))
-        w2 = np.random.uniform(low=bounds[0], high=bounds[1], size=(n_y, n_h))
-        b1 = np.zeros((n_h, 1))
-        b2 = np.zeros((n_y, 1))
+        w1 = np.random.uniform(low=self.bounds[0], high=self.bounds[1], size=(self.n_h, self.n_x))
+        w2 = np.random.uniform(low=self.bounds[0], high=self.bounds[1], size=(self.n_y, self.n_h))
+        b1 = np.zeros((self.n_h, 1))
+        b2 = np.zeros((self.n_y, 1))
 
         # assert that the shapes of matrixes are correct
-        assert (w1.shape == (n_h, n_x))
-        assert (b1.shape == (n_h, 1))
-        assert (w2.shape == (n_y, n_h))
-        assert (b2.shape == (n_y, 1))
+        assert (w1.shape == (self.n_h, self.n_x))
+        assert (b1.shape == (self.n_h, 1))
+        assert (w2.shape == (self.n_y, self.n_h))
+        assert (b2.shape == (self.n_y, 1))
 
         init_params = {"w1": w1, "b1": b1, "w2": w2, "b2": b2}
 
         return init_params
 
-    def forward_propagation(self, X, parameters, af):
+    def forward_propagation(self, X):
         # Retrieves parameters and inputs and computes the forward propagation
 
         # ARGUMENTS:
@@ -106,23 +99,23 @@ class NeuralNet:
         if isinstance(X, list):
             X = np.array(X).reshape(len(X), 1)
         assert isinstance(X, np.ndarray)
-        assert isinstance(parameters, dict)
-        assert af.lower() == "s" or af.lower() == "t"
+        assert isinstance(self.parameters, dict)
+        assert self.activation_function.lower() == "s" or self.activation_function.lower() == "t"
 
         # retrive parameters
-        w1 = parameters["w1"]
-        b1 = parameters["b1"]
-        w2 = parameters["w2"]
-        b2 = parameters["b2"]
+        w1 = self.parameters["w1"]
+        b1 = self.parameters["b1"]
+        w2 = self.parameters["w2"]
+        b2 = self.parameters["b2"]
 
         # Forward propagation
         Z1 = np.dot(w1, X) + b1
 
-        if af.lower() == "s":
-            A1 = sigmoid(Z1)
+        if self.activation_function.lower() == "s":
+            A1 = self.sigmoid(Z1)
             Z2 = np.dot(w2, A1) + b2
-            Y = sigmoid(Z2)
-        elif af.lower() == "t":
+            Y = self.sigmoid(Z2)
+        elif self.activation_function.lower() == "t":
             A1 = np.tanh(Z1)
             Z2 = np.dot(w2, A1) + b2
             Y = np.tanh(Z2)
@@ -133,32 +126,32 @@ class NeuralNet:
 
         return Y[0][0], cache
 
-    def update_params_gaussian(self, parameters, bounds, noise):
-        # Updates with random gaussian noise
+    def update_neural_net(self):
+        # Updates NN with random gaussian noise
         # ARGUMENTS:
         # Parameters - python dictionary of weight and bias parameters
         # bounds: upper and lower values for parameters
-        # noise -  Gaussian noise level
+        # noise -  Gaussian noise level forward
 
         #  RETURNS:
         # updated_parameters - python dictionary of updated parameters
 
         # Assert correct inputs
-        assert isinstance(parameters, dict)
-        assert len(bounds) == 2
-        assert isinstance(noise, float)
+        assert isinstance(self.parameters, dict)
+        assert len(self.bounds) == 2
+        assert isinstance(self.noise, float)
 
         # retrive parameters
-        w1 = parameters["w1"]
-        b1 = parameters["b1"]
-        w2 = parameters["w2"]
-        b2 = parameters["b2"]
+        w1 = self.parameters["w1"]
+        b1 = self.parameters["b1"]
+        w2 = self.parameters["w2"]
+        b2 = self.parameters["b2"]
 
         # Add noise to parameters
-        w1 = w1 + np.multiply(np.random.uniform(low=bounds[0], high=bounds[1], size=list(w1.shape)), noise)
-        w2 = w2 + np.multiply(np.random.uniform(low=bounds[0], high=bounds[1], size=list(w2.shape)), noise)
-        b1 = b1 + np.multiply(np.random.uniform(low=bounds[0], high=bounds[1], size=list(b1.shape)), noise)
-        b2 = b2 + np.multiply(np.random.uniform(low=bounds[0], high=bounds[1], size=list(b2.shape)), noise)
+        w1 = w1 + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1], size=list(w1.shape)), self.noise)
+        w2 = w2 + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1], size=list(w2.shape)), self.noise)
+        b1 = b1 + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1], size=list(b1.shape)), self.noise)
+        b2 = b2 + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1], size=list(b2.shape)), self.noise)
 
         updated_params = {"w1": w1, "b1": b1, "w2": w2, "b2": b2}
 
