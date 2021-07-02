@@ -214,7 +214,37 @@ class Creature:
         # Update neural network
         self.neural_net.update_neural_net()
         return self
-
+    
+    def fix_morphology(self):
+        # While evolving the creature, voxels can become isolated from any adjacent voxels. This causes errors in the simulater as these voxels
+        # drop off the creature and to the floor. If this occurs, the isolated voxels should be removed and the morphology and stiffness_array updated accordingly.
+        
+        # Create copy of morphology with additional zeros around the morphology 
+        temp_morph = np.zeros((self.phenotype.morphology.shape[0] + 2, self.phenotype.morphology.shape[1] + self.phenotype.structure[1]*2))
+        temp_morph[1:-1, self.phenotype.structure[1]:-self.phenotype.structure[1]] = self.phenotype.morphology
+        
+        # Iterate through each element of creatures morphology
+        for indx, elem in np.ndenumerate(self.phenotype.morphology):
+            # Turn index into array and offset index to iterate through temp_morphology
+            indx = np.array(list(indx))
+            temp_indx = indx + [1, self.phenotype.structure[1]]
+            
+            # Create empty array of the values of all adjacent voxels.
+            adj_voxels = []
+            # append adjacent voxel values to list
+            adj_voxels.append(array[index[0], index[1]-1])
+            adj_voxels.append(array[index[0], index[1]+1])
+            adj_voxels.append(array[index[0], index[1]-6])
+            adj_voxels.append(array[index[0], index[1]+6])
+            adj_voxels.append(array[index[0]+1, index[1]])
+            adj_voxels.append(array[index[0]-1, index[1]])
+            
+            # if all the values of the adj_voxels are 0 (i.e. they don't exist) remove voxel from morphology
+            if not any(adj_voxels):
+                # Update morphology and stiffness
+                self.phenotype.morphology[indx[0], indx[1]] = 0
+                self.stiffness_array[indx[0], indx[1]] = self.settings["structure"]["min_stiffness"]
+        
     def remove_eighths(self):
         # Removes eight sections of the creature. Updates self.eight_damage_morph dictionary
         # ARGUMENTS:
@@ -687,6 +717,9 @@ class Population:
 
                 # Update creature stiffness, uses ANN
                 creature.update_stiffness()
+                
+                # Remove isolated voxels
+                creature.fix_morphology()
 
                 # Create new folders and move files
                 ccf = os.path.join(gfd, creature.name)  # current creature folder
