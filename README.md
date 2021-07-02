@@ -33,7 +33,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | ------------- |---------|---------------------------------------------------------------------------------------------------------------|
 | pop_size      | Int     | Population size. During each episode `pop_size` number of creatures are simulated and evaluated.              |
 | ep_size       | Int     | Number of episodes. During each episode creature is evaluated and their morphology is changed using their ANN.|
-| Top           | Int     | Number of top performing creatures to keep after each generation.                                             |
+| top           | Int     | Number of top performing creatures to keep after each generation.                                             |
 | evolve        | Int     | Number of creatures to evolve their ANN.                                                                      |
 | gen_size      | Int     | Number of generations. After each generation the `top` performing creatures from the evaluation are kept (ANN unchanged) and the following `evolve`                               number of performing creatures have their ANN randomly changed. The following `pop_size - top - evolve` number of creatures are created to always add                             different creatures into the system.|
 
@@ -44,7 +44,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | num_inputs           | Int     | Number of nodes in input layer of the ANN.                                                                    |
 | num_outputs          | Int     | Number of nodes in output layer of the ANN.                                                                   |
 | num_hidden_layers    | Int     | Number of nodes in the hidden layer of the ANN. Currently ANN only has one hidden layer.                      |
-| activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"t"` for tanh AF and `"s"` for sigmoid. Output layer of ANN uses by default a sigmoid AF |
+| activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"t"` for tanh AF and `"s"` for sigmoid. Output layer of ANN uses by default a sigmoid AF. |
 | bounds               | List    | Upper and lower bounds for weights and biases, limitting them to this range.                                  |
 | noise                | Float   | Percentage of desired noise when 'evolving' ANN.                                                              |
 
