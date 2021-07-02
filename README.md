@@ -41,9 +41,10 @@ With the settings file open you can edit any of the parameters you wish. If you 
 
 | ANN Paramameters     |Type     |Description                                                                                                    |
 | -------------------- |---------|---------------------------------------------------------------------------------------------------------------|
+| num_inputs           | Int     | Number of nodes in input layer of the ANN.                                                                    |
 | num_outputs          | Int     | Number of nodes in output layer of the ANN.                                                                   |
 | num_hidden_layers    | Int     | Number of nodes in the hidden layer of the ANN. Currently ANN only has one hidden layer.                      |
-| activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"t"` for tanh AF and `"s"` for sigmoid. Output layer of ANN uses by default a                                    sigmoid AF                                                                                                    |
+| activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"t"` for tanh AF and `"s"` for sigmoid. Output layer of ANN uses by default a sigmoid AF |
 | bounds               | List    | Upper and lower bounds for weights and biases, limitting them to this range.                                  |
 | noise                | Float   | Percentage of desired noise when 'evolving' ANN.                                                              |
 
@@ -53,7 +54,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | -------------------|---------|---------------------------------------------------------------------------------------------------------------|
 | creature_structure | List    | Shape of creature (x, y, z). I.e. (6, 6, 6) would be a 6 by 6 by 6 creature.                                  |
 | base_stiffness     | Int     | Baseline stiffness, used to initialize the creatures morphology.                                              |
-| max_stiffness      | Int     | Maximun stiffness that the creature can evolve to, stiffness values that surpass this value are reset to this value. |
+| max_stiffness      | Int     | Maximun stiffness that the creature can evolve to, stiffness values that surpass this value are reset to this                                         value.                                                                                                     |
 | morph_max          | Int     | Voxel material number to be asigned to voxels that equal or surpass max_stiffness.                            |
 | min_stiffness      | Int     | Minimum stiffness that the creature can evolve to, stiffness values bellow this value are reset to this value.|
 | morph_min          | Int     | Voxel material number to be asigned to voxels that equal or decrease bellow min_stiffness.                    |
@@ -63,15 +64,13 @@ With the settings file open you can edit any of the parameters you wish. If you 
 
 ***
 
-| Structure          |Type     |Description                                                                                                    |
+| mat_defaults       |Type     |Description                                                                                                    |
 | -------------------|---------|---------------------------------------------------------------------------------------------------------------|
-| creature_structure | List    | Shape of creature (x, y, z). I.e. (6, 6, 6) would be a 6 by 6 by 6 creature.                                  |
-| base_stiffness     | Int     | Baseline stiffness, used to initialize the creatures morphology.                                              |
-| max_stiffness      | Int     | Maximun stiffness that the creature can evolve to, stiffness values that surpass this value are reset to this value. |
-| morph_max          | Int     | Voxel material number to be asigned to voxels that equal or surpass max_stiffness.                            |
-| min_stiffness      | Int     | Minimum stiffness that the creature can evolve to, stiffness values bellow this value are reset to this value.|
-| morph_min          | Int     | Voxel material number to be asigned to voxels that equal or decrease bellow min_stiffness.                    |
-| morph_between      | Int     | Voxel material number to be asigned to voxels that are between min_stiffness and max_stiffness.               |
-| actuator_stiffness | Int     | Stiffness to be assigned to actuators.                                                                        |
-| actuator_morph     | Int     | Voxel material number to be assigned to actuator voxel.                                                       |
+| number_of_materials| Int     | Number of different voxel materials, used top create each material.                                           |
+| integration        | List    | Shape (1, 2) creature.vxa integrator values. integaration[0] = Integrator and integration[1] = DtFrac.        |
+| damping            | List    | Shape (1, 3) creature.vxa damping values. damping[0] = BondDampingZ, damping[1] = ColDampingZ and damping[2] = SlowDampingZ |
+| collision          | List    | Shape (1, 3) creature.vxa collision values. collision[0] = SelfColEnabled. collision[1] = ColSystem and collision[2] = CollisionHorizon |
+| features           | List    | Shape (1,3) creature.vxa features values. features[0] = FluidDampEnabled, features[1] = PoissonKickBackEnabled and features[2] = EnforceLatticeEnabled.|
+| stopConditions     | List    | Shape (1, 3) creature.vxa stopConditions values. stopConditions[0] =  |
+                                                  |
 
