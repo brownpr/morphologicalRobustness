@@ -3,7 +3,7 @@ import os
 import sys
 
 
-from creature import Population
+from population import Population
 
 
 if __name__ == "__main__":
@@ -31,7 +31,7 @@ if __name__ == "__main__":
         pop.save_population()
 
         # Damage population
-        pop.damage_population(10)
+        damaged_pop = pop.damage_population(10)
 
         print("Hello world")
     except KeyboardInterrupt:  # Allow for keybord interupt of script
