@@ -126,6 +126,9 @@ class Creature:
     def update_stiffness(self):
         # Uses artificial neural network to update the creatures morphology and stiffness array.
 
+        # Update old fitness with current fitness
+        self.previous_fitness = self.fitness_eval
+
         # Calculate displacement since last evaluation
         self.displacement_delta = (self.fitness_eval - self.previous_fitness)/10
 
@@ -182,34 +185,36 @@ class Creature:
         new_stiffness[new_stiffness > self.settings["structure"]["max_stiffness"]]\
             = self.settings["structure"]["max_stiffness"]
 
-        # Get range of cells where the morphology was previously 4 (actuator)
-        new_morphology = np.where((self.phenotype.morphology == self.settings["structure"]["actuator_morph"]),
-                                  self.settings["structure"]["actuator_morph"], new_morphology)
-        new_stiffness = np.where(self.phenotype.morphology == self.settings["structure"]["actuator_morph"],
-                                 self.settings["structure"]["actuator_stiffness"], new_stiffness)
-
         # Update stiffness
         self.phenotype.morphology = new_morphology
         self.stiffness_array = new_stiffness
 
-        # Update old fitness with new fitness
-        self.previous_fitness = self.fitness_eval
+        # Fix morphology, restore actuator voxels stiffness and material number and remove isolated voxels
+        self.fix_morphology()
     
     def evolve(self):
         # Evolves creatures artificial neural network. (Varies biases and weights)
         # RETURNS
-        # self          class, creature
+        # self              class, creature class
 
         # Update neural network
         self.neural_net.update_neural_net()
         return self
     
     def fix_morphology(self):
-        # While evolving the creature, voxels can become isolated from any adjacent voxels. This causes errors in the simulater as these voxels
-        # drop off the creature and to the floor. If this occurs, the isolated voxels should be removed and the morphology and stiffness_array updated accordingly.
-        
+        # While evolving the creature, voxels can become isolated from any adjacent voxels. This causes errors in the
+        # simulator as these voxels drop off the creature and to the floor. If this occurs, the isolated voxels should
+        # be removed and the morphology and stiffness_array updated accordingly.
+
+        # Restore actuator voxel stiffness and number
+        np.where((self.phenotype.base_morphology == self.settings["structure"]["actuator_morph"]),
+                 self.settings["structure"]["actuator_morph"], self.phenotype.morphology)
+        np.where(self.phenotype.base_morphology == self.settings["structure"]["actuator_morph"],
+                 self.settings["structure"]["actuator_stiffness"], self.stiffness_array)
+
         # Create copy of morphology with additional zeros around the morphology 
-        temp_morph = np.zeros((self.phenotype.morphology.shape[0] + 2, self.phenotype.morphology.shape[1] + self.phenotype.structure[1]*2))
+        temp_morph = np.zeros((self.phenotype.morphology.shape[0] + 2, self.phenotype.morphology.shape[1]
+                               + self.phenotype.structure[1]*2))
         temp_morph[1:-1, self.phenotype.structure[1]:-self.phenotype.structure[1]] = self.phenotype.morphology
         
         # Iterate through each element of creatures morphology
@@ -220,13 +225,14 @@ class Creature:
 
             # Create empty array of the values of all adjacent voxels.
             adj_voxels = []
+
             # append adjacent voxel values to list
-            adj_voxels.append(adj_voxels[temp_indx[0], temp_indx[1]-1])
-            adj_voxels.append(adj_voxels[temp_indx[0], temp_indx[1]+1])
-            adj_voxels.append(adj_voxels[temp_indx[0], temp_indx[1]-6])
-            adj_voxels.append(adj_voxels[temp_indx[0], temp_indx[1]+6])
-            adj_voxels.append(adj_voxels[temp_indx[0]+1, temp_indx[1]])
-            adj_voxels.append(adj_voxels[temp_indx[0]-1, temp_indx[1]])
+            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] - 1])
+            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] + 1])
+            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] - self.phenotype.structure[1]])
+            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] + self.phenotype.structure[1]])
+            adj_voxels.append(temp_morph[temp_indx[0] + 1, temp_indx[1]])
+            adj_voxels.append(temp_morph[temp_indx[0] - 1, temp_indx[1]])
 
             # if all the values of the adj_voxels are 0 (i.e. they don't exist) remove voxel from morphology
             if not any(adj_voxels):
@@ -348,8 +354,6 @@ class Creature:
         self.phenotype.morphology = np.array(random.choice(list(creatures_eighths_damage.values())))
         self.stiffness_array = np.where(self.phenotype.morphology == 0, self.settings["structure"]["min_stiffness"],
                                         self.stiffness_array)
-
-
 
     def remove_halfs(self):
 

@@ -15,7 +15,7 @@ class Evosoro:
         self.structure = self.settings["structure"]["creature_structure"]
 
         # Initial morphology
-        self.morphology = np.array([
+        self.base_morphology = np.array([
             [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
             [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
             [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
@@ -23,6 +23,9 @@ class Evosoro:
             [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
             [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
             ])
+
+        # As just initialized, base morphology is the creatures morphology
+        self.morphology = self.base_morphology
 
         # Creature material properties (Initially set to defaults), please refer to settings.json to see definitions
         self.vxa_file = None

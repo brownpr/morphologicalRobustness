@@ -11,18 +11,16 @@ if __name__ == "__main__":
     # edit launch parameters and default values
 
     try:
-        # Create population
-        pop = Population()
-
-        print(str(dt.datetime.now()) + " INITIAL POPULATION: ")
-        print([str(ctr.name) + ":" + str(ctr.genome) for ctr in pop.population.values()])
-
-        # Create file to save creature files
+        # Create file to save creature files, if file exists stop sim
         if not os.path.exists("generated_files"):
             os.mkdir("generated_files")
         else:
-            print("STOPPING SIMULATION ... creature files may already exist. Please delete or rename 'generated_files' folder.")
+            print("STOPPING SIMULATION: Creature files may already exist. Please delete or "
+                  "rename the 'generated_files' folder.")
             sys.exit()
+
+        # Create population
+        pop = Population()
 
         # Start Genetic Algorithm
         pop.run_genetic_algorithm()
@@ -31,8 +29,14 @@ if __name__ == "__main__":
         pop.save_population()
 
         # Damage population
-        damaged_pop = pop.damage_population(10)
+        damaged_pop = pop.inflict_damage(10)
 
-        print("Hello world")
+        # Run genetic Algorithm on damaged population
+        damaged_pop.run_genetic_algorithm()
+
+        # Save damaged population
+        damaged_pop.save_population()
+
+        print("Hello world")  # Used as a
     except KeyboardInterrupt:  # Allow for keybord interupt of script
         exit()

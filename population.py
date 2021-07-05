@@ -21,14 +21,15 @@ class Population:
         settings_file.close()
 
         # When called for first time, creates a new population of creatures.
-        self.population = {}  # Evaluation population
-        self.full_population = {}  # Population of all creatures
+        self.population = {}                # Evaluation population
+        self.full_population = {}           # Population of all creatures
+        self.damaged_population = False     # is population been damaged?
+
         # If population introduced into system add to self.population, else create new starting population
         if population is not None:
             self.population = population
         else:
             self.create_new_population((0, self.settings["parameters"]["pop_size"]))
-        self.damaged_population = False             # is population been damaged?
 
     def create_new_population(self, population_range):
         # ARGUMENTS:
@@ -47,18 +48,26 @@ class Population:
             # Create creature
             creature = Creature(genome, i)
 
-            # If the creature to be added to a damaged population, damage said creature before adding to the population
-            if self.damaged_population:
-                creature.remove_eighths()
-
             # Append creature to creature dictionary
             self.population["creature_" + str(i)] = creature
             # Add created creatures to full population
             self.full_population["creature_" + str(i)] = creature
 
+        # If the creature to be added to a damaged population class, damage said creatures before adding them
+        if self.damaged_population:
+            self.population = self.inflict_damage()
+
     def run_genetic_algorithm(self):
         # Retrieve parameters
         gen_size = self.settings["parameters"]["gen_size"]
+
+        # Print Creature Genomes
+        if self.damaged_population:
+            print(str(dt.datetime.now()) + " INITIAL DAMAGED POPULATION: ")
+        else:
+            print(str(dt.datetime.now()) + " INITIAL UNDAMAGED POPULATION: ")
+
+        print([str(ctr.name) + ":" + str(ctr.genome) for ctr in self.population.values()])
 
         # Initialize genetic algorithm
         for gen_num in range(gen_size):
@@ -66,7 +75,7 @@ class Population:
             print(str(dt.datetime.now()) + " CURRENT GENERATION NUMBER: " + str(gen_num))
 
             # Evaluate population
-            self.eval_pop(gen_num)
+            self.evaluate_population(gen_num)
 
             if not gen_num == gen_size - 1:
                 # Create new population and retrieve top performing creature
@@ -78,9 +87,12 @@ class Population:
             print(str(dt.datetime.now()) + " Top performer:" + top_creature.name + ". Fitness: " + str(
                 top_creature.fitness_eval))
 
-        print("FINISHED SIMULATIONS FOR UNDAMAGED CREATURES.")
+        if self.damaged_population:
+            print("FINISHED SIMULATIONS FOR DAMAGED CREATURES.")
+        else:
+            print("FINISHED SIMULATIONS FOR UNDAMAGED CREATURES.")
 
-    def eval_pop(self, generation_number):
+    def evaluate_population(self, generation_number):
         # ARGUMENTS
         # - gen_num:        int, Current generation
         # - population:     dict, creatures to evaluate
@@ -128,9 +140,6 @@ class Population:
                 # Update creature stiffness, uses ANN
                 creature.update_stiffness()
 
-                # Remove isolated voxels
-                creature.fix_morphology()
-
                 # Create new folders and move files
                 ccf = os.path.join(gfd, creature.name)  # current creature folder
                 if not os.path.exists(ccf):
@@ -168,8 +177,11 @@ class Population:
         # Create new population with completely random genomes
         num_creatures = len(self.full_population)  # Number of creatures created so far
         new_pop_size = len(self.population) - top - evolve  # Number of new creatures to make
-        self.population = {}  # Reset population
-        self.create_new_population((num_creatures, num_creatures + new_pop_size))  # Create new creatures
+
+        # Reset population
+        self.population = {}
+        # Create new creatures (must be ran before adding top preforming creatures
+        self.create_new_population((num_creatures, num_creatures + new_pop_size))
 
         # Add top preforming creatures to new population
         self.population.update({crt.name: crt for crt in sorted_pop[0:top]})
@@ -181,7 +193,7 @@ class Population:
         print(str(dt.datetime.now()) + " CURRENT POPULATION: ")
         print([str(ctr.name) + ":" + str(ctr.genome) for ctr in self.population.values()])
 
-        # Top creature
+        # Top creaturetop_creature
         top_creature = sorted_pop[0]
 
         return top_creature
@@ -210,11 +222,16 @@ class Population:
 
         # Save files
         dict_sort_crts = [{ctr.name: ctr.fitness_eval} for ctr in sorted_pop]
-        with open("generated_files/creature_evolution.json", "w") as ctr_file:
+        if self.damaged_population:
+            file_name = "damaged_creature_evolution"
+        else:
+            file_name = "creature_evolution"
+
+        with open("generated_files/" + file_name + ".json", "w") as ctr_file:
             json.dump(dict_sort_crts, ctr_file, sort_keys=True, indent=4)
         ctr_file.close()
 
-    def damage_population(self, num_creatures_to_damage=None):
+    def inflict_damage(self, num_creatures_to_damage=None):
         # Inflicts damage to each member of the population, if number_of_creatures_to_damage is given,
         # the full_population is sorted and inputed to select the best creatures.
         # If pop not specified used self.full_population
@@ -241,7 +258,7 @@ class Population:
             quarter_ctr.remove_halfs()
             half_ctr.remove_halfs()
 
-            # Save into self.damage_population dict
+            # Save into self.inflict_damage dict
             damaged_pop[eighths_ctr.name] = eighths_ctr
             damaged_pop[quarter_ctr.name] = quarter_ctr
             damaged_pop[half_ctr.name] = half_ctr

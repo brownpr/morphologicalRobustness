@@ -2,8 +2,8 @@
       "evosoro_path": "./sculpting/voxelyze",
       "parameters": {
             "pop_size": 5,
-            "ep_size": 15,
-            "gen_size": 15,
+            "ep_size": 1,
+            "gen_size": 1,
             "top": 1,
             "evolve": 2
       },
