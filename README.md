@@ -8,7 +8,7 @@ Download and install Evosoro.
 `git clone https://github.com/skriegman/evosoro.git`
 Please see https://github.com/skriegman/evosoro for further details on how to install.
 
-IMPORTANT: Within the `settings.json` file and ensure the `"evosoro_path"` parameter is correct.
+IMPORTANT: Within the `settings.json` file, ensure the `"evosoro_path"` root is correct.
 
 While in the working directory run `python initialize.py`
 
