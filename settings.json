@@ -7,16 +7,17 @@
             "top": 1,
             "evolve": 2
       },
-      "neural_network_parameters": {
+      "nn_parameters": {
             "activation_function": "t",
-            "num_inputs": 3,
+            "num_inputs": 2,
             "num_outputs": 1,
             "num_hidden_layers": 16,
-            "bounds": [-0.5, 0.5],
+            "bounds": [-1.5, 1.5],
             "noise": 0.005 
       },
       "structure": {
             "creature_structure": [6, 6, 6],
+            "sections": [2, 2, 2],
             "base_stiffness": 500000,
             "max_stiffness": 50000000,
             "morph_max":  2,
@@ -24,7 +25,8 @@
             "morph_min":  0,
             "morph_between": 3,
             "actuator_stiffness": 500000,
-            "actuator_morph": 4
+            "actuator_morph": 4,
+            "unchangeable_morphs": [4]
       },
       "mat_defaults": {
             "number_of_materials": 1,
@@ -41,7 +43,7 @@
             "numForced": 0,
             "gravity": [1, -9.81, 1, 0, "bump1", "bump2"],
             "thermal": [1, 39, 25, 1, 0.25],
-            "version": "0.93",
+            "version": 0.93,
             "lattice": [0.05, 1, 1, 1, 0, 0, 0, 0],
             "voxel": ["BOX", 1, 1, 1],
             "mat_type": 0,

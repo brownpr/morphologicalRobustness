@@ -1,62 +1,109 @@
 import csv
 import json
 import random
+import sys
 
 import numpy as np
 
 from evosoro import Evosoro
+from voxel import Voxel
 from neural_network import NeuralNet
 
 
 class Creature:
-    def __init__(self, genome, index):
+    def __init__(self, index=None, name=None):
         # When called initializes creature file, setting default values to creature.
         # ARGUMENTS
-        # - genome      float, creature genome
-        # - index       int, index item for creature naming
+        # - index                                                   int, index item for creature naming
 
         # import settings
         settings_file = open("settings.json")
         self.settings = json.load(settings_file)
         settings_file.close()
 
-        # Creature genotype and phenotype
-        self.genome = genome                # int, creatures genome
-        self.phenotype = Evosoro()          # class, creature phenotype
+        # create creature phenotype
+        self.phenotype = Evosoro()                                  # class, creature phenotype
 
-        # Creature initial stiffness
-        self.stiffness_array = np.multiply(np.ones((self.phenotype.structure[2], self.phenotype.structure[0]
-                                                    * self.phenotype.structure[1])), self.settings["structure"]["base_stiffness"])
+        # Create dictionary of voxels                               # dict of classes, dictionary of creatures voxels
+        self.voxels = {coords: Voxel(list(coords), mat_number) for coords, mat_number
+                       in dict(np.ndenumerate(self.phenotype.morphology)).items()}
 
         # Basic creature information
-        self.index = index                  # int, index used to create creature name
-        self.episode = None                 # int, saves creatures current episode number
-        self.generation = None              # int, saves creatures current generation number
-        self.name = self.name = "_creature" + str(self.index)  # string, Set creature's name
+        self.episode = None                                         # int, saves creatures current episode number
+        self.generation = None                                      # int, saves creatures current generation number
+        if name:
+            self.name = name                                        # string, Set creature's name
+        elif not index:
+            print("SIMULATION STOPPED. When creating a creature, you must provide either name or index!")
+            sys.exit()
+        else:
+            self.name = "_creature" + str(index)                    # string, Set creature's name
 
         # file name variables
-        self.current_file_name = None       # string, current VXA file name
-        self.fitness_file_name = None       # string, current fitness file name
-        self.pressures_file_name = None     # string, current pressures file name
-        self.ke_file_name = None            # string, current ke file name
-        self.strain_file_name = None        # string, current strain file name
+        self.current_file_name = None                               # string, current VXA file name
+        self.fitness_file_name = None                               # string, current fitness file name
+        self.pressures_file_name = None                             # string, current pressures file name
+        self.ke_file_name = None                                    # string, current ke file name
+        self.strain_file_name = None                                # string, current strain file name
 
         # Fitness variables
-        self.previous_fitness = 0.0         # float, previous fitness, used to calculate fitness between episodes
-        self.fitness_xyz = None             # (1,3) list, fitness
-        self.fitness_eval = 0.0             # float, creatures evaluated fitness
-        self.displacement_delta = 0.0       # float, creatures displacement
-        self.average_forces = None          # (z, x*y) list, average forces acting on voxels. (where x, y, z are values from structure list)
+        self.previous_fitness = 0.0                                 # float, previous fitness
+        self.fitness_xyz = None                                     # (1,3) list, fitness
+        self.fitness_eval = 0.0                                     # float, creatures evaluated fitness
+        self.average_forces = None                                  # (z, x*y) list, average forces acting on voxels.
+        #                                                             (where x, y, z are values from structure list)
+
+        # genome (neural network of creature
+        self.neural_net = None                                      # class, neural network of the creature
 
         # evolution
-        self.neural_net = None              # class, uses NeuralNet class to create nn for creature
-        self.evolution = {}                 # dict, used to save creatures evolutionary history
+        self.evolution = {}                                         # dict, save creatures evolutionary history
+
+        # Create stiffness array and update it
+        self.stiffness_array = np.zeros(self.phenotype.morphology.shape)  # np.array of stiffness at each voxel
+        for index, voxel in self.voxels.items():
+            self.stiffness_array[index[0]][index[1]][index[2]] = voxel.stiffness
+
+    def get_neural_network(self):
+        self.neural_net = NeuralNet(self.settings["nn_parameters"]["num_inputs"])
+
+    def get_neighbours_and_sections(self):
+        # Get region areas
+        x_sections, y_sections, z_sections = self.settings["structure"]["sections"]
+        range_x_section, range_y_sections, range_z_sections = np.divide(self.settings["structure"]["creature_structure"],
+                                                                        self.settings["structure"]["sections"])
+        section_counter = 0
+        section_range_dictionary = {}
+        for z in range(0, z_sections):
+            z_range = [z * range_z_sections, (z + 1) * range_z_sections]
+            for y in range(0, y_sections):
+                y_range = [y * range_z_sections, (y + 1) * range_z_sections]
+                for x in range(0, x_sections):
+                    x_range = [x * range_z_sections, (x + 1) * range_z_sections]
+                    section_range_dictionary["section_" + str(section_counter)] = [x_range, y_range, z_range]
+                    section_counter += 1
+
+        # Iterate thorough voxels and add their neighbours and the section they belong to
+        for index, voxel in self.voxels.items():
+            z, y, x = index
+            # Get list of possible neighbours and find which voxels are within this range
+            neighbours_list = [[z, y, x - 1], [z, y, x + 1], [z, y - 1, x], [z, y + 1, x], [z - 1, y, x], [z + 1, y, x]]
+            for neighbour in self.voxels.values():
+                if neighbour.coordinates in neighbours_list:
+                    voxel.neighbours.append(neighbour)
+
+            # Find which section the x, y, z coordinates for this voxel
+            for section_num, section_range in section_range_dictionary.items():
+                if (x >= section_range[0][0]) and (x <= section_range[0][1]) and (y >= section_range[1][0]) and \
+                        (y <= section_range[1][1]) and (z >= section_range[2][0]) and (z <= section_range[2][1]) and \
+                        voxel.section is None:
+                    voxel.section = section_num
 
     def update_creature_info(self, generation, episode):
         # Updates basic creature information
         # ARGUMENTS
-        # - generation      int, used to update creature generation number
-        # - episode         int, used to update creature episode number
+        # - generation                                              int, used to update creature generation number
+        # - episode                                                 int, used to update creature episode number
 
         # Update information
         if not self.generation == generation:
@@ -69,38 +116,11 @@ class Creature:
         self.strain_file_name = "strain" + self.fitness_file_name + ".csv"
 
     def update_vxa(self, generation, episode):
-
         # update file name before creating vxa
         self.update_creature_info(generation, episode)
 
         # Update vxa file
-        self.phenotype.update_vxa_file(self)
-
-    def update_fitness(self):
-        # Evaluates creatures fitness by reading the saved fitness file and saves fitness evaluation. Punishes creature
-        # for displacement in y axis
-
-        mod = 3  # modifier for severity of punishment when creature has y displacement
-
-        # Open file and retrieve fitness values
-        tag_y = "<normDistY>"
-        tag_x = "<normDistX>"
-        tag_z = "<normDistZ>"
-        with open(self.fitness_file_name) as fit_file:
-            for line in fit_file:
-                if tag_y in line:
-                    result_Y = abs(float(line.replace(tag_y, "").replace("</" + tag_y[1:], "")))
-                if tag_x in line:
-                    result_X = float(line.replace(tag_x, "").replace("</" + tag_x[1:], ""))
-                if tag_z in line:
-                    result_Z = abs(float(line.replace(tag_z, "").replace("</" + tag_z[1:], "")))
-        fit_file.close()
-
-        # Save fitness values
-        self.fitness_xyz = [result_X, result_Y, result_Z]
-
-        # Calculate fitness, punish for locomotion that is not in a straight line
-        self.fitness_eval = self.fitness_xyz[0] - self.fitness_xyz[1]*mod
+        self.phenotype.update_vxa_file(self, stiffness_array=self.stiffness_array)
 
     def update_evolution(self):
         # Updates creatures evolutionary history ands saves key information within its self.evolution dictionary.
@@ -123,21 +143,71 @@ class Creature:
         self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"average_forces": self.average_forces})
         self.evolution["gen_" + str(self.generation)].update({"nn_parameters": self.neural_net.parameters})
 
-    def update_stiffness(self):
-        # Uses artificial neural network to update the creatures morphology and stiffness array.
+    def update_morphology(self, new_stiffness_array=None):
+        # Updates creatures stiffness and morphology dependant on stiffness values
+        # Additionally, as voxels are removed voxels can become isolated from any adjacent voxels. This causes errors
+        # in the simulator. Hence, these isolated voxels must be removed
+
+        # Update creatures voxel stiffness and morphology and update creatures stiffness_array,
+        # if none is given this part is skipped
+        if new_stiffness_array is not None:
+            for index, voxel in self.voxels.items():
+                voxel.update_with_stiffness(new_stiffness_array[index[0]][index[1]][index[2]])
+                self.stiffness_array[index[0]][index[1]][index[2]] = voxel.stiffness
+
+        # remove isolated voxels
+        for voxel in self.voxels.values():
+            # only run if the voxel can change and is not already removed
+            if voxel.can_be_changed and voxel.material_number:
+                # grab list of the material numbers for neighbouring voxels
+                neighbour_states = [neighbour.material_number for neighbour in voxel.neighbours]
+                # if all neighbouring voxels are 0 delete current cube
+                if not any(neighbour_states):
+                    voxel.material_number = 0
+
+        # Update creatures morphology
+        for index, voxel in self.voxels.items():
+            # Although not needed (as no change will have occurred) this will save iterations
+            if voxel.can_be_changed:
+                self.phenotype.morphology[index[0]][index[1]][index[2]] = voxel.material_number
+
+    def calculate_fitness(self):
+        # Evaluates creatures fitness by reading the saved fitness file and saves fitness evaluation. Punishes creature
+        # for displacement in y axis
+
+        mod = 3  # int, modifier for severity of punishment in y displacement
 
         # Update old fitness with current fitness
         self.previous_fitness = self.fitness_eval
 
+        # Open file and retrieve fitness values
+        tag_y = "<normDistY>"
+        tag_x = "<normDistX>"
+        tag_z = "<normDistZ>"
+        with open(self.fitness_file_name) as fit_file:
+            for line in fit_file:
+                if tag_y in line:
+                    result_Y = abs(float(line.replace(tag_y, "").replace("</" + tag_y[1:], "")))
+                if tag_x in line:
+                    result_X = float(line.replace(tag_x, "").replace("</" + tag_x[1:], ""))
+                if tag_z in line:
+                    result_Z = abs(float(line.replace(tag_z, "").replace("</" + tag_z[1:], "")))
+        fit_file.close()
+
+        # Save fitness values
+        self.fitness_xyz = [result_X, result_Y, result_Z]
+
+        # Calculate fitness, punish for locomotion that is not in a straight line
+        self.fitness_eval = self.fitness_xyz[0] - self.fitness_xyz[1] * mod
+
+    def calculate_stiffness(self):
+        # Uses artificial neural network to update the creatures morphology and stiffness array.
+
         # Calculate displacement since last evaluation
-        self.displacement_delta = (self.fitness_eval - self.previous_fitness)/10
+        displacement_delta = (self.fitness_eval - self.previous_fitness)/10
 
-        # If fitness is getting worse, ensure delta is negative
-        if (self.previous_fitness > self.fitness_eval) and self.displacement_delta > 0:
-            self.displacement_delta = self.displacement_delta * -1
-
-        # Reset average force
-        average_forces = np.zeros((self.phenotype.structure[2], self.phenotype.structure[0]*self.phenotype.structure[1]))
+        # Average forces
+        average_forces = np.zeros((self.phenotype.structure[2], self.phenotype.structure[0], self.phenotype.structure[1]))
 
         # Format KE file
         with open(self.ke_file_name) as kef:
@@ -145,17 +215,13 @@ class Creature:
             for row in ke_data:
                 row_data = np.multiply(np.array(row[:-1], dtype=np.float), 10)
                 row_array = np.reshape(row_data, (self.phenotype.structure[2],
-                                                  self.phenotype.structure[0]*self.phenotype.structure[1]))
+                                                  self.phenotype.structure[0], self.phenotype.structure[1]))
                 average_forces += row_array
         kef.close()
 
         # set self.average_forces vector and calculate ultimate avg
         self.average_forces = np.divide(average_forces, np.prod(self.phenotype.structure))
         ultimate_average = np.sum(self.average_forces)/np.prod(self.phenotype.structure)
-
-        input_len = 3  # Set the len of the inputs
-        if self.neural_net is None:
-            self.neural_net = NeuralNet(input_len)
 
         # Calculate difference between ultimate avg and the average force on each voxel
         ke_delta = np.multiply(np.subtract(ultimate_average, self.average_forces), 10)
@@ -164,444 +230,144 @@ class Creature:
         self.update_evolution()
 
         # Use NN to update the stiffness array of the creature
-        updated_stiffness = []
-        for row in ke_delta:
-            updated_stiffness.append([self.neural_net.forward_propagation(
-                (elem, self.displacement_delta, self.genome))[0]*self.settings["structure"]["min_stiffness"] for elem in row])
-        updated_stiffness = np.array(updated_stiffness)
-        new_stiffness = self.stiffness_array + updated_stiffness
+        vectorized_nn = np.vectorize(self.neural_net.forward_propagation)
+        stiffness_delta = np.multiply((vectorized_nn(ke_delta, displacement_delta)[0]),
+                                      self.settings["structure"]["min_stiffness"])
 
-        # Use stiffness array to create new morphology
-        new_morphology = np.ones(self.phenotype.morphology.shape)*self.settings["structure"]["morph_min"]
-        new_morphology = np.where(new_stiffness > self.settings["structure"]["max_stiffness"],
-                                  self.settings["structure"]["morph_max"], new_morphology)
-        new_morphology = np.where(np.logical_and(new_stiffness > self.settings["structure"]["min_stiffness"],
-                                                 new_stiffness < self.settings["structure"]["max_stiffness"]),
-                                  self.settings["structure"]["morph_between"], new_morphology)
 
-        # Set limits to stiffness
-        new_stiffness[new_stiffness < self.settings["structure"]["min_stiffness"]]\
-            = self.settings["structure"]["min_stiffness"]
-        new_stiffness[new_stiffness > self.settings["structure"]["max_stiffness"]]\
-            = self.settings["structure"]["max_stiffness"]
+        # Update stiffness of voxels
+        new_stiffness_array = np.add(self.stiffness_array, stiffness_delta)
 
-        # Update stiffness
-        self.phenotype.morphology = new_morphology
-        self.stiffness_array = new_stiffness
+        # Set upper and lower bounds to stiffness array
+        np.where(new_stiffness_array < self.settings["structure"]["min_stiffness"],
+                 self.settings["structure"]["min_stiffness"], new_stiffness_array)
+        np.where(new_stiffness_array > self.settings["structure"]["max_stiffness"],
+                 self.settings["structure"]["max_stiffness"], new_stiffness_array)
 
         # Fix morphology, restore actuator voxels stiffness and material number and remove isolated voxels
-        self.fix_morphology()
-    
-    def evolve(self):
-        # Evolves creatures artificial neural network. (Varies biases and weights)
-        # RETURNS
-        # self              class, creature class
+        self.update_morphology(new_stiffness_array)
 
-        # Update neural network
-        self.neural_net.update_neural_net()
-        return self
-    
-    def fix_morphology(self):
-        # While evolving the creature, voxels can become isolated from any adjacent voxels. This causes errors in the
-        # simulator as these voxels drop off the creature and to the floor. If this occurs, the isolated voxels should
-        # be removed and the morphology and stiffness_array updated accordingly.
+    def remove_voxels_sections(self, sections):
+        if isinstance(sections, tuple):
+            sections = list(sections)
+        assert isinstance(sections, list)
 
-        # Restore actuator voxel stiffness and number
-        np.where((self.phenotype.base_morphology == self.settings["structure"]["actuator_morph"]),
-                 self.settings["structure"]["actuator_morph"], self.phenotype.morphology)
-        np.where(self.phenotype.base_morphology == self.settings["structure"]["actuator_morph"],
-                 self.settings["structure"]["actuator_stiffness"], self.stiffness_array)
+        for voxel in self.voxels:
+            if voxel.section in sections:
+                if voxel.can_be_changed and voxel.material_number:
+                    voxel.material_number = 0
 
-        # Create copy of morphology with additional zeros around the morphology 
-        temp_morph = np.zeros((self.phenotype.morphology.shape[0] + 2, self.phenotype.morphology.shape[1]
-                               + self.phenotype.structure[1]*2))
-        temp_morph[1:-1, self.phenotype.structure[1]:-self.phenotype.structure[1]] = self.phenotype.morphology
+        # update the morphology of the creature
+        self.update_morphology()
+
+    def stiffness_change_sections(self, sections, multiply_stiffness=None, divide_stiffness=None,
+                                  set_new_stiffness=None, reduce_stiffness=None, increase_stiffness=None):
+        # If no stiffness change provided stop simulation
+        if not any((multiply_stiffness, divide_stiffness, set_new_stiffness, reduce_stiffness, increase_stiffness)):
+            print("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
+            sys.exit()
+
+        # Multiplies stiffness of affected region by input
+        if multiply_stiffness:
+            for voxel in sections:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness*multiply_stiffness)
+
+        # Divides stiffness of affected region by input
+        if divide_stiffness:
+            for voxel in sections:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness/divide_stiffness)
+
+        # Changes stiffness to given input
+        if increase_stiffness:
+            for voxel in sections:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(set_new_stiffness)
+
+        # Add to stiffness of affected region by input
+        if increase_stiffness:
+            for voxel in sections:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness + increase_stiffness)
+
+        # reduce stiffness of affected region by input
+        if multiply_stiffness:
+            for voxel in sections:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness - reduce_stiffness)
+
+        # update the morphology of the creature
+        self.update_morphology()
+
+    def remove_voxels_spherical_region(self, centre_voxel, radius):
+        # Kinda no point running
+        if radius < 2:
+            print("WARNING: remove_spherical_region radius input of 1 will only remove the centre voxel and none of its"
+                  "neighbours.")
+
+        # Create list of voxels that are in the desired area
+        voxels_in_radius = set([centre_voxel])
+        while radius > 0:
+            affected_voxels = list(voxels_in_radius)
+            for voxel in affected_voxels:
+                voxels_in_radius.update(voxel.neighbours)
+                affected_voxels.remove(voxel)
+                radius = radius - 1
+
+        # Set material number for voxels in radius to zero
+        for voxel in voxels_in_radius:
+            if voxel.can_be_changed and voxel.material_number:
+                voxel.material_number = 0
+
+        # update the morphology of the creature
+        self.update_morphology()
+
+    def stiffness_change_spherical_region(self, centre_voxel, radius, multiply_stiffness=None, divide_stiffness=None,
+                                          set_new_stiffness=None, reduce_stiffness=None, increase_stiffness=None):
+        # If no stiffness change provided stop simulation
+        if not any((multiply_stiffness, divide_stiffness, set_new_stiffness, reduce_stiffness, increase_stiffness)):
+            print("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
+            sys.exit()
         
-        # Iterate through each element of creatures morphology
-        for indx, elem in np.ndenumerate(self.phenotype.morphology):
-            # Turn index into array and offset index to iterate through temp_morphology
-            indx = np.array(list(indx))
-            temp_indx = indx + [1, self.phenotype.structure[1]]
+        # Create list of voxels that are in the desired area
+        voxels_in_radius = set([centre_voxel])
+        while radius > 0:
+            affected_voxels = list(voxels_in_radius)
+            for voxel in affected_voxels:
+                voxels_in_radius.update(voxel.neighbours)
+                affected_voxels.remove(voxel)
+                radius = radius - 1
 
-            # Create empty array of the values of all adjacent voxels.
-            adj_voxels = []
+        # Multiplies stiffness of affected region by input
+        if multiply_stiffness:
+            for voxel in voxels_in_radius:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness*multiply_stiffness)
 
-            # append adjacent voxel values to list
-            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] - 1])
-            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] + 1])
-            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] - self.phenotype.structure[1]])
-            adj_voxels.append(temp_morph[temp_indx[0], temp_indx[1] + self.phenotype.structure[1]])
-            adj_voxels.append(temp_morph[temp_indx[0] + 1, temp_indx[1]])
-            adj_voxels.append(temp_morph[temp_indx[0] - 1, temp_indx[1]])
+        # Divides stiffness of affected region by input
+        if divide_stiffness:
+            for voxel in voxels_in_radius:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness/divide_stiffness)
 
-            # if all the values of the adj_voxels are 0 (i.e. they don't exist) remove voxel from morphology
-            if not any(adj_voxels):
-                # Update morphology and stiffness
-                self.phenotype.morphology[indx[0], indx[1]] = 0
-                self.stiffness_array[indx[0], indx[1]] = self.settings["structure"]["min_stiffness"]
+        # Changes stiffness to given input
+        if increase_stiffness:
+            for voxel in voxels_in_radius:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(set_new_stiffness)
 
-    def remove_eighths(self):
-        # Removes eight sections of the creature. Updates self.eight_damage_morph dictionary
-        # ARGUMENTS:
-        # - creature                class (creature), creature information
+        # Add to stiffness of affected region by input
+        if increase_stiffness:
+            for voxel in voxels_in_radius:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness + increase_stiffness)
 
-        # get voxel dimensions
-        x_voxels = self.phenotype.structure[0]
-        y_voxels = self.phenotype.structure[1]
-        z_voxels = self.phenotype.structure[2]
+        # reduce stiffness of affected region by input
+        if multiply_stiffness:
+            for voxel in voxels_in_radius:
+                if voxel.can_be_changed:
+                    voxel.update_with_stiffness(voxel.stiffness - reduce_stiffness)
 
-        # set empty arrays for the four quarters of the damage
-        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
-
-        # set empty arrays for damage of the eighths
-        damaged_morph_1 = []
-        damaged_morph_2 = []
-        damaged_morph_3 = []
-        damaged_morph_4 = []
-        damaged_morph_5 = []
-        damaged_morph_6 = []
-        damaged_morph_7 = []
-        damaged_morph_8 = []
-
-        # setting damaged areas
-        for ii in range(y_voxels):
-            if ii < y_voxels / 2:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_1[ii, jj] = 0
-                    else:
-                        damage_2[ii, jj] = 0
-            else:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_3[ii, jj] = 0
-                    else:
-                        damage_4[ii, jj] = 0
-
-        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
-            # Cube region with even lengths x_voxels, y_voxels and z_voxels
-            for k in range(z_voxels):
-                row = self.phenotype.morphology[k]
-
-                if k < z_voxels / 2:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_1)
-                    row_damage_2 = np.multiply(row_array, damage_2)
-                    row_damage_3 = np.multiply(row_array, damage_3)
-                    row_damage_4 = np.multiply(row_array, damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    # Append unaffected layers
-                    damaged_morph_5.append(row.tolist())
-                    damaged_morph_6.append(row.tolist())
-                    damaged_morph_7.append(row.tolist())
-                    damaged_morph_8.append(row.tolist())
-
-                else:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_5 = np.multiply(row_array, damage_1)
-                    row_damage_6 = np.multiply(row_array, damage_2)
-                    row_damage_7 = np.multiply(row_array, damage_3)
-                    row_damage_8 = np.multiply(row_array, damage_4)
-
-                    # Convert to list
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
-                    row_damg_7 = [elem for lst in row_damage_7.tolist() for elem in lst]
-                    row_damg_8 = [elem for lst in row_damage_8.tolist() for elem in lst]
-
-                    # Append unaffected layers
-                    damaged_morph_1.append(row.tolist())
-                    damaged_morph_2.append(row.tolist())
-                    damaged_morph_3.append(row.tolist())
-                    damaged_morph_4.append(row.tolist())
-                    # Apply damage to layers
-                    damaged_morph_5.append(row_damg_5)
-                    damaged_morph_6.append(row_damg_6)
-                    damaged_morph_7.append(row_damg_7)
-                    damaged_morph_8.append(row_damg_8)
-
-        creatures_eighths_damage = {"eighths_creature_1": damaged_morph_1,
-                                    "eighths_creature_2": damaged_morph_2,
-                                    "eighths_creature_3": damaged_morph_3,
-                                    "eighths_creature_4": damaged_morph_4,
-                                    "eighths_creature_5": damaged_morph_5,
-                                    "eighths_creature_6": damaged_morph_6,
-                                    "eighths_creature_7": damaged_morph_7,
-                                    "eighths_creature_8": damaged_morph_8
-                                    }
-
-        # Update creature morphology and set stiffness to min_stiffness if morphology is at 0
-        self.phenotype.morphology = np.array(random.choice(list(creatures_eighths_damage.values())))
-        self.stiffness_array = np.where(self.phenotype.morphology == 0, self.settings["structure"]["min_stiffness"],
-                                        self.stiffness_array)
-
-    def remove_halfs(self):
-
-        # get voxel dimensions
-        x_voxels = self.phenotype.structure[0]
-        y_voxels = self.phenotype.structure[1]
-        z_voxels = self.phenotype.structure[2]
-
-        # set empty arrays for the four quarters of the damage
-        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_5 = np.zeros([x_voxels, y_voxels], dtype=int)
-
-        # set empty arrays for damage of the halfs
-        damaged_morph_1 = []
-        damaged_morph_2 = []
-        damaged_morph_3 = []
-        damaged_morph_4 = []
-        damaged_morph_5 = []
-        damaged_morph_6 = []
-
-        for ii in range(y_voxels):
-            if ii < y_voxels / 2:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_1[ii, jj] = 0
-                    else:
-                        damage_2[ii, jj] = 0
-            else:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_3[ii, jj] = 0
-                    else:
-                        damage_4[ii, jj] = 0
-
-        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
-            # Cube region with even lengths x_voxels, y_voxels and z_voxels
-            for k in range(z_voxels):
-                row = self.phenotype.morphology[k]
-                if k < z_voxels / 2:
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_5)
-                    row_damage_2 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_3 = np.multiply(np.multiply(row_array, damage_4), damage_3)
-                    row_damage_4 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_5 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_5.append(row_damg_5)
-                    # Append unaffected layers
-                    damaged_morph_6.append(row.tolist())
-
-                else:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_2 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_3 = np.multiply(np.multiply(row_array, damage_4), damage_3)
-                    row_damage_4 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_5 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-                    row_damage_6 = np.multiply(row_array, damage_5)
-
-                    # Convert to list
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
-
-                    # Append unaffected layers
-                    damaged_morph_1.append(row.tolist())
-                    # Apply damage to layers
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_5.append(row_damg_5)
-                    damaged_morph_6.append(row_damg_6)
-
-        creatures_halfs_damage = {"half_creature_1": damaged_morph_1,
-                                  "half_creature_2": damaged_morph_2,
-                                  "half_creature_3": damaged_morph_3,
-                                  "half_creature_4": damaged_morph_4,
-                                  "half_creature_5": damaged_morph_5,
-                                  "half_creature_6": damaged_morph_6,
-                                  }
-
-        # Update creature morphology and set stiffness to min_stiffness if morphology is at 0
-        self.phenotype.morphology = np.array(random.choice(list(creatures_halfs_damage.values())))
-        self.stiffness_array = np.where(self.phenotype.morphology == 0, self.settings["structure"]["min_stiffness"],
-                                        self.stiffness_array)
-
-    def remove_quarters(self):
-
-        # get voxel dimensions
-        x_voxels = self.phenotype.structure[0]
-        y_voxels = self.phenotype.structure[1]
-        z_voxels = self.phenotype.structure[2]
-
-        # set empty arrays for the four quarters of the damage
-        damage_1 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_2 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_3 = np.ones([x_voxels, y_voxels], dtype=int)
-        damage_4 = np.ones([x_voxels, y_voxels], dtype=int)
-
-        # set empty arrays for damage of the quarters
-        damaged_morph_1 = []
-        damaged_morph_2 = []
-        damaged_morph_3 = []
-        damaged_morph_4 = []
-        damaged_morph_5 = []
-        damaged_morph_6 = []
-        damaged_morph_7 = []
-        damaged_morph_8 = []
-        damaged_morph_9 = []
-        damaged_morph_10 = []
-        damaged_morph_11 = []
-        damaged_morph_12 = []
-
-        # setting damaged areas
-        for ii in range(y_voxels):
-            if ii < y_voxels / 2:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_1[ii, jj] = 0
-                    else:
-                        damage_2[ii, jj] = 0
-            else:
-                for jj in range(x_voxels):
-                    if jj < x_voxels / 2:
-                        damage_3[ii, jj] = 0
-                    else:
-                        damage_4[ii, jj] = 0
-
-        if x_voxels % 2 == 0 and y_voxels % 2 == 0 and z_voxels % 2 == 0:
-            # Cube region with even lengths x_voxels, y_voxels and z_voxels
-            for k in range(z_voxels):
-                row = self.phenotype.morphology[k]
-
-                if k < z_voxels / 2:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_1)
-                    row_damage_2 = np.multiply(row_array, damage_2)
-                    row_damage_3 = np.multiply(row_array, damage_3)
-                    row_damage_4 = np.multiply(row_array, damage_4)
-                    row_damage_5 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_6 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-                    row_damage_9 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_10 = np.multiply(np.multiply(row_array, damage_3), damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_5 = [elem for lst in row_damage_5.tolist() for elem in lst]
-                    row_damg_6 = [elem for lst in row_damage_6.tolist() for elem in lst]
-                    row_damg_9 = [elem for lst in row_damage_9.tolist() for elem in lst]
-                    row_damg_10 = [elem for lst in row_damage_10.tolist() for elem in lst]
-
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_5.append(row_damg_5)
-                    damaged_morph_6.append(row_damg_6)
-                    damaged_morph_9.append(row_damg_9)
-                    damaged_morph_10.append(row_damg_10)
-                    # Append unaffected layers
-                    damaged_morph_7.append(row.tolist())
-                    damaged_morph_8.append(row.tolist())
-                    damaged_morph_11.append(row.tolist())
-                    damaged_morph_12.append(row.tolist())
-
-                else:
-                    # convert to array
-                    row_array = np.array(np.array_split(row, x_voxels))
-
-                    # Apply damage to each row
-                    row_damage_1 = np.multiply(row_array, damage_1)
-                    row_damage_2 = np.multiply(row_array, damage_2)
-                    row_damage_3 = np.multiply(row_array, damage_3)
-                    row_damage_4 = np.multiply(row_array, damage_4)
-                    row_damage_7 = np.multiply(np.multiply(row_array, damage_1), damage_3)
-                    row_damage_8 = np.multiply(np.multiply(row_array, damage_2), damage_4)
-                    row_damage_11 = np.multiply(np.multiply(row_array, damage_1), damage_2)
-                    row_damage_12 = np.multiply(np.multiply(row_array, damage_3), damage_4)
-
-                    # Convert to list
-                    row_damg_1 = [elem for lst in row_damage_1.tolist() for elem in lst]
-                    row_damg_2 = [elem for lst in row_damage_2.tolist() for elem in lst]
-                    row_damg_3 = [elem for lst in row_damage_3.tolist() for elem in lst]
-                    row_damg_4 = [elem for lst in row_damage_4.tolist() for elem in lst]
-                    row_damg_7 = [elem for lst in row_damage_7.tolist() for elem in lst]
-                    row_damg_8 = [elem for lst in row_damage_8.tolist() for elem in lst]
-                    row_damg_11 = [elem for lst in row_damage_11.tolist() for elem in lst]
-                    row_damg_12 = [elem for lst in row_damage_12.tolist() for elem in lst]
-
-                    # Append unaffected layers
-                    damaged_morph_5.append(row.tolist())
-                    damaged_morph_6.append(row.tolist())
-                    damaged_morph_9.append(row.tolist())
-                    damaged_morph_10.append(row.tolist())
-                    # Apply damage to layers
-                    damaged_morph_1.append(row_damg_1)
-                    damaged_morph_2.append(row_damg_2)
-                    damaged_morph_3.append(row_damg_3)
-                    damaged_morph_4.append(row_damg_4)
-                    damaged_morph_7.append(row_damg_7)
-                    damaged_morph_8.append(row_damg_8)
-                    damaged_morph_11.append(row_damg_11)
-                    damaged_morph_12.append(row_damg_12)
-
-        creatures_quarters_damage = {"quarters_creature_1": damaged_morph_1,
-                                     "quarters_creature_2": damaged_morph_2,
-                                     "quarters_creature_3": damaged_morph_3,
-                                     "quarters_creature_4": damaged_morph_4,
-                                     "quarters_creature_5": damaged_morph_5,
-                                     "quarters_creature_6": damaged_morph_6,
-                                     "quarters_creature_7": damaged_morph_7,
-                                     "quarters_creature_8": damaged_morph_8,
-                                     "quarters_creature_9": damaged_morph_9,
-                                     "quarters_creature_10": damaged_morph_10,
-                                     "quarters_creature_11": damaged_morph_11,
-                                     "quarters_creature_12": damaged_morph_12
-                                     }
-
-        # Update creature morphology and set stiffness to min_stiffness if morphology is at 0
-        self.phenotype.morphology = np.array(random.choice(list(creatures_quarters_damage.values())))
-        self.stiffness_array = np.where(self.phenotype.morphology == 0, self.settings["structure"]["min_stiffness"],
-                                        self.stiffness_array)
-
+        # update the morphology of the creature
+        self.update_morphology()

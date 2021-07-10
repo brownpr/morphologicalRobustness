@@ -3,6 +3,7 @@ import os
 import datetime as dt
 import operator
 import subprocess as sub
+import sys
 import time
 import shutil
 from copy import deepcopy
@@ -13,23 +14,28 @@ from creature import Creature
 
 
 class Population:
-    # Allows for the creation of a population of creatures
-    def __init__(self, population=None):
+    def __init__(self, population=None, damaged_population=False):
         # Import settings
         settings_file = open("settings.json")
         self.settings = json.load(settings_file)
         settings_file.close()
 
         # When called for first time, creates a new population of creatures.
-        self.population = {}                # Evaluation population
-        self.full_population = {}           # Population of all creatures
-        self.damaged_population = False     # is population been damaged?
+        self.population = {}                            # dict, Evaluation population
+        self.full_population = {}                       # dict, Full population
+        self.damaged_population = damaged_population    # bool, has population been damaged?
+
+        # Create an example creature to copy from (as many parameters don't change when creating an additional creature)
+        self.base_creature = Creature(name="base_creature")
+        self.base_creature.get_neighbours_and_sections()
 
         # If population introduced into system add to self.population, else create new starting population
         if population is not None:
             self.population = population
         else:
             self.create_new_population((0, self.settings["parameters"]["pop_size"]))
+
+        self.full_population = self.population          # Full population is initial population
 
     def create_new_population(self, population_range):
         # ARGUMENTS:
@@ -43,21 +49,33 @@ class Population:
 
         # Create population
         for i in range(a, b):
-            # set genome to a random float between -2.0 and 2.0
-            genome = np.round(np.random.uniform(-2, 2, 1), decimals=1)[0]
             # Create creature
-            creature = Creature(genome, i)
+            creature = deepcopy(self.base_creature)
+            creature.name = "_creature" + str(i)
+
+            # Get ANN for creature
+            creature.get_neural_network()
 
             # Append creature to creature dictionary
-            self.population["creature_" + str(i)] = creature
+            self.population[creature.name] = creature
             # Add created creatures to full population
-            self.full_population["creature_" + str(i)] = creature
+            self.full_population[creature.name] = creature
 
         # If the creature to be added to a damaged population class, damage said creatures before adding them
         if self.damaged_population:
             self.population = self.inflict_damage()
 
     def run_genetic_algorithm(self):
+        # Runs genetic algorithm by evaluating each creature and then changing their morphology accordingly
+
+        # Create file to save creature files, if file exists stop sim
+        if not os.path.exists("generated_files"):
+            os.mkdir("generated_files")
+        else:
+            print("STOPPING SIMULATION: Creature files may already exist. Please delete or "
+                  "rename the 'generated_files' folder.")
+            sys.exit()
+
         # Retrieve parameters
         gen_size = self.settings["parameters"]["gen_size"]
 
@@ -67,7 +85,7 @@ class Population:
         else:
             print(str(dt.datetime.now()) + " INITIAL UNDAMAGED POPULATION: ")
 
-        print([str(ctr.name) + ":" + str(ctr.genome) for ctr in self.population.values()])
+        print([str(ctr.name) for ctr in self.population.values()])
 
         # Initialize genetic algorithm
         for gen_num in range(gen_size):
@@ -88,9 +106,9 @@ class Population:
                 top_creature.fitness_eval))
 
         if self.damaged_population:
-            print("FINISHED SIMULATIONS FOR DAMAGED CREATURES.")
+            print(str(dt.datetime.now()) + "FINISHED SIMULATIONS FOR DAMAGED CREATURES.")
         else:
-            print("FINISHED SIMULATIONS FOR UNDAMAGED CREATURES.")
+            print(str(dt.datetime.now()) + "FINISHED SIMULATIONS FOR UNDAMAGED CREATURES.")
 
     def evaluate_population(self, generation_number):
         # ARGUMENTS
@@ -107,7 +125,7 @@ class Population:
             for creature in self.population.values():
 
                 # Create VXA file for creature
-                creature.update_vxa(generation=generation_number, episode=episode)
+                creature.update_vxa(generation_number, episode)
 
                 # Get file path variables and save vxa
                 vxa_fp = os.path.join(cwd, creature.current_file_name + ".vxa")
@@ -128,17 +146,17 @@ class Population:
                     time.sleep(1)
 
                 # Update creature fitness
-                creature.update_fitness()
+                creature.calculate_fitness()
 
                 # occasionally an error occurs and results return 0, if so, re-run for up to 60s
                 t = time.time()
                 toc = 0
-                while creature.update_fitness == 0 and toc < 60:
-                    creature.update_fitness()
+                while creature.fitness_eval == 0 and toc < 60:
+                    creature.calculate_fitness()
                     toc = time.time() - t
 
                 # Update creature stiffness, uses ANN
-                creature.update_stiffness()
+                creature.calculate_stiffness()
 
                 # Create new folders and move files
                 ccf = os.path.join(gfd, creature.name)  # current creature folder
@@ -230,44 +248,4 @@ class Population:
         with open("generated_files/" + file_name + ".json", "w") as ctr_file:
             json.dump(dict_sort_crts, ctr_file, sort_keys=True, indent=4)
         ctr_file.close()
-
-    def inflict_damage(self, num_creatures_to_damage=None):
-        # Inflicts damage to each member of the population, if number_of_creatures_to_damage is given,
-        # the full_population is sorted and inputed to select the best creatures.
-        # If pop not specified used self.full_population
-        if num_creatures_to_damage is None:
-            damage_pop = self.full_population
-        else:
-            damage_pop_list, top_creature = self.sort_population(self.full_population)
-            damage_pop = {crt.name: crt for crt in damage_pop_list[0:num_creatures_to_damage]}
-
-        damaged_pop = {}         # Dictionary to store damaged population
-        for crt_name, crt in damage_pop.items():
-            # Copy class
-            eighths_ctr = deepcopy(crt)
-            quarter_ctr = deepcopy(crt)
-            half_ctr = deepcopy(crt)
-
-            # rename copied creature
-            eighths_ctr.name = crt_name + "_eighths_damage"
-            quarter_ctr.name = crt_name + "_quarter_damage"
-            half_ctr.name = crt_name + "_half_damage"
-
-            # Inflict damage to creature (creates new morphology and stiffness array)
-            eighths_ctr.remove_eighths()
-            quarter_ctr.remove_halfs()
-            half_ctr.remove_halfs()
-
-            # Save into self.inflict_damage dict
-            damaged_pop[eighths_ctr.name] = eighths_ctr
-            damaged_pop[quarter_ctr.name] = quarter_ctr
-            damaged_pop[half_ctr.name] = half_ctr
-
-        # With damaged population, create new class of damage population
-        damaged_population = Population(damaged_pop)
-
-        # set self.damaged_population to true
-        damaged_population.damaged_population = True
-
-        return damaged_population
 

@@ -7,7 +7,7 @@ class NeuralNet:
     def __init__(self, num_inputs):
         # Load parameters
         settings_file = open("settings.json")
-        self.settings = json.load(settings_file)["neural_network_parameters"]
+        self.settings = json.load(settings_file)["nn_parameters"]
         settings_file.close()
 
         # Define NN parameters
@@ -81,7 +81,7 @@ class NeuralNet:
 
         return init_params
 
-    def forward_propagation(self, X):
+    def forward_propagation(self, *X):
         # Retrieves parameters and inputs and computes the forward propagation
 
         # ARGUMENTS:

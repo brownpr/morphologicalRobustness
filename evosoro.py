@@ -1,7 +1,7 @@
-import sys
 import json
 
 import numpy as np
+from voxel import Voxel
 
 
 class Evosoro:
@@ -10,7 +10,7 @@ class Evosoro:
         settings_file = open("settings.json")
         self.settings = json.load(settings_file)
         settings_file.close()
-        
+
         # Creature Structure
         self.structure = self.settings["structure"]["creature_structure"]
 
@@ -21,11 +21,13 @@ class Evosoro:
             [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
             [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
             [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
-            [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
-            ])
+            [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
+        ])
 
         # As just initialized, base morphology is the creatures morphology
-        self.morphology = self.base_morphology
+        self.morphology = self.base_morphology.reshape((self.settings["structure"]["creature_structure"][2],
+                                                       self.settings["structure"]["creature_structure"][1],
+                                                       self.settings["structure"]["creature_structure"][0]))
 
         # Creature material properties (Initially set to defaults), please refer to settings.json to see definitions
         self.vxa_file = None
@@ -90,9 +92,9 @@ class Evosoro:
         # - stiffness_array         np.ndarray, used to set stiffness_array in vxa file
         #
         # RETURNS
-        # - vxa_file                string, containing vxa file
+        # - vxa_file                string,stiffness_array containing vxa file
 
-        # If property given change self.PROPERTY_NAME
+        # If property given change self.PROstiffness_arrayPERTY_NAME
         if number_of_materials is not None:
             self.number_of_materials = number_of_materials
         if integration is not None:
@@ -136,35 +138,12 @@ class Evosoro:
         if phase_offset is not None:
             self.phase_offset = phase_offset
         if stiffness_array is not None:
-            self.stiffness_array = stiffness_array
+            self.stiffness_array = np.reshape(stiffness_array, (self.settings["structure"]["creature_structure"][2],
+                                                                self.settings["structure"]["creature_structure"][1] *
+                                                                self.settings["structure"]["creature_structure"][0]))
 
         # Set Genetic Algorithm variable
         self.gen_algorithm = [self.write_fitness, creature.fitness_file_name, self.QhullTmpFile, self.CurvaturesTmpFile]
-
-        # Call VXA_CREATE and get VXA file text
-        init_text = self.init_creator()
-
-        env_text = self.environment_creator()
-
-        vxc_text = self.vxc_creator()
-
-        for mat_ID in range(1, self.number_of_materials + 1):
-            mat_name = "mat_" + str(mat_ID)
-            voxel_text = self.voxel_creator()
-
-        struc_text = self.structure_creator()
-
-        stiff_text = self.stiffness_creator(creature.stiffness_array)
-
-        offset_text = self.offset_creator()
-
-        end_text = self.end_creator()
-
-        # save vxa file
-        self.vxa_file = init_text + env_text + vxc_text + voxel_text + struc_text + offset_text + stiff_text + end_text
-
-    # Set variables for simulator conditions
-    def init_creator(self):
 
         # set variables
         [integrator, dtFrac] = self.integration
@@ -173,6 +152,12 @@ class Evosoro:
         [fluidDampEnabled, poissonKickBackEnabled, enforceLatticeEnabled] = self.features
         [stopConditionType, stopConditionValue, InitCmTime] = self.stopConditions
         [WriteFitnessFile, FitnessFileName, QhullTmpFile, CurvaturesTmpFile] = self.gen_algorithm
+        [gravEnabled, gravAcc, floorEnabled, sloped_floor, bump_size, bump_sep] = self.gravity
+        [tempEnabled, tempAmp, tempBase, varyTempEnabled, tempPeriod] = self.thermal
+        [lattice_dim, x_dim_adj, y_dim_adj, z_dim_adj, x_line_offset,
+         y_line_offset, x_layer_offset, y_layer_offset] = self.lattice
+        [vox_name, x_squeeze, y_squeeze, z_squeeze] = self.voxel
+        [x_voxels, y_voxels, z_voxels] = self.structure
 
         init_text = '''<?xml version="1.0" encoding="ISO-8859-1"?>
         <VXA Version="1.0">
@@ -215,16 +200,7 @@ class Evosoro:
         <QhullTmpFile>''' + str(QhullTmpFile) +'''</QhullTmpFile>
         <CurvaturesTmpFile>''' + str(CurvaturesTmpFile) +'''</CurvaturesTmpFile>
         </GA>
-        </Simulator>'''
-
-        return init_text
-
-    def environment_creator(self):
-        # Set variables
-        [gravEnabled, gravAcc, floorEnabled, sloped_floor, bump_size, bump_sep] = self.gravity
-        [tempEnabled, tempAmp, tempBase, varyTempEnabled, tempPeriod] = self.thermal
-
-        environment_text = '''
+        </Simulator>
         <Environment>
         <Fixed_Regions>
         <NumFixed>''' + str(self.numFixed) + '''</NumFixed>
@@ -247,18 +223,7 @@ class Evosoro:
         <VaryTempEnabled>''' + str(varyTempEnabled) + '''</VaryTempEnabled>
         <TempPeriod>''' + str(tempPeriod) + '''</TempPeriod>
         </Thermal>
-        </Environment>'''
-
-        return environment_text
-
-    def vxc_creator(self):
-
-        # set variables
-        [lattice_dim, x_dim_adj, y_dim_adj, z_dim_adj, x_line_offset,
-         y_line_offset, x_layer_offset, y_layer_offset] = self.lattice
-        [vox_name, x_squeeze, y_squeeze, z_squeeze] = self.voxel
-
-        vcx_init_text = '''
+        </Environment>
         <VXC Version="''' + str(self.version) + '''">
         <Lattice>
         <Lattice_Dim>''' + str(lattice_dim) + '''</Lattice_Dim>
@@ -277,50 +242,7 @@ class Evosoro:
         <Z_Squeeze>''' + str(z_squeeze) + '''</Z_Squeeze>
         </Voxel>'''
 
-        return vcx_init_text
-
-    def voxel_creator(self):
-        # default colour list: blue,green,red,yellow,cian,white,black default colours
-        # if mat_colour == "" and int(mat_ID) >= 8:
-        #     # print error if material ID exceeds 8
-        #     print("WARNING: No material colour chosen and material ID number "
-        #           "exceeds available default colours. A random colour will be set with alpha as 1.")
-        #     mat_colour_list = [np.rand([0, 1]), np.rand([0, 1]), np.rand([0, 1]), 1]
-        # elif mat_colour == "":
-        #     mat_colour_list = default_colours[(int(mat_ID) - 1)]  # select default colour from mat_ID number
-        #     mat_colour_list = mat_colour_list.split(',')
-        # elif mat_colour == ("rand" or "Rand" or "RAND"):
-        #     # random colour chosen
-        #     mat_colour_list = [np.rand([0, 1]), np.rand([0, 1]), np.rand([0, 1]), np.rand([0, 1])]
-        # elif isinstance(mat_colour, str):
-        #     mat_colour.replace(" ", "")  # remove whitespace
-        #     mat_colour_list = mat_colour.split(',')
-        # else:
-        #     mat_colour_list = mat_colour
-        # # Set empty variables and error check parameter lists
-        # for ii in range(len(mat_colour_list)):
-        #     if mat_colour_list[ii] == "":
-        #         # set default red
-        #         print("WARNING: Colour parameter value at " + str(ii) + " is empty, this will be set as a randomly.")
-        #         mat_colour_list[ii] = np.rand([0, 1])
-        #     # Ensure only floats are used
-        #     try:
-        #         float(mat_colour_list[ii])
-        #     except ValueError:
-        #         print("ERROR: Value introduced in colour parameter " + str(ii) + " is incorrect, only use floats.")
-        #         sys.exit()
-        #
-        #     # material colours should be between 0.00 and 1.00
-        #     if int(mat_colour_list[ii]) < 0.01 or int(mat_colour_list[ii]) > 1.00:
-        #         if int(mat_colour_list[ii]) != 0:
-        #             print("ERROR: you need to choose a material colour value between 0.00 and 1.00.")
-        #             sys.exit()
-
-        # set variables
-        [mat_model, elastic_mod, plastic_mod, yield_stress, fail_model, fail_stress, fail_strain, density,
-         poissons_ration, CTE, uStatic, uDynamic, isConductive] = self.mechanical_properties
-        # [red, green, blue, alpha] = mat_colour_list
-
+        # Currently static!!!!!!
         voxel_text = '''
         <Palette>
         <Material ID="1">
@@ -443,53 +365,15 @@ class Evosoro:
         <uDynamic>0.5</uDynamic>
         </Mechanical>
         </Material>'''
-        # voxel_text = '''
-        # <Palette>
-        # <Material ID="''' + str(mat_ID) + '''">
-        # <MatType>''' + str(mat_type) + '''</MatType>
-        # <Name>''' + mat_name + '''</Name>
-        # <Display>
-        # <Red>''' + str(red) + '''</Red>
-        # <Green>''' + str(green) + '''</Green>
-        # <Blue>''' + str(blue) + '''</Blue>
-        # <Alpha>''' + str(alpha) + '''</Alpha>
-        # </Display>
-        # <Mechanical>
-        # <MatModel>''' + str(mat_model) + '''</MatModel>
-        # <Elastic_Mod>''' + '%.2e' % Decimal(str(elastic_mod)) + '''</Elastic_Mod>
-        # <Plastic_Mod>''' + str(plastic_mod) + '''</Plastic_Mod>
-        # <Yield_Stress>''' + str(yield_stress) + '''</Yield_Stress>
-        # <FailModel>''' + str(fail_model) + '''</FailModel>
-        # <Fail_Stress>''' + str(fail_stress) + '''</Fail_Stress>
-        # <Fail_Strain>''' + str(fail_strain) + '''</Fail_Strain>
-        # <Density>''' + '%.2e' % Decimal(str(density)) + '''</Density>
-        # <Poissons_Ratio>''' + str(poissons_ration) + '''</Poissons_Ratio>
-        # <CTE>''' + str(CTE) + '''</CTE>
-        # <uStatic>''' + str(uStatic) + '''</uStatic>
-        # <uDynamic>''' + str(uDynamic) + '''</uDynamic>
-        # <IsConductive>''' + str(isConductive) + '''</IsConductive>
-        # </Mechanical>
-        # </Material>'''
 
-        return voxel_text
-
-    def morph_2_text(self):
-
-        text_array = []
-
-        for row in self.morphology:
+        morph_array = []
+        for row in self.morphology.reshape((self.settings["structure"]["creature_structure"][2],
+                                           self.settings["structure"]["creature_structure"][1] *
+                                           self.settings["structure"]["creature_structure"][0])):
             temp_text = "".join([str(int(elem)) for elem in row])
-            text_array.append(temp_text)
+            morph_array.append(temp_text)
 
-        morph_text = "\n".join(['''    <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in text_array])
-        return morph_text
-
-    def structure_creator(self):
-        # Convert morphology into text
-        morph_text = self.morph_2_text()
-
-        # set variables
-        [x_voxels, y_voxels, z_voxels] = self.structure
+        morph_text = "\n".join(['''        <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in morph_array])
 
         structure_text = '''
         </Palette>
@@ -498,15 +382,11 @@ class Evosoro:
         <Y_Voxels>''' + str(y_voxels) + '''</Y_Voxels>
         <Z_Voxels>''' + str(z_voxels) + '''</Z_Voxels>
         <Data>\n'''
-
-        new_line = '''
+        end_structure = '''
         </Data>\n'''
-        structure_text = structure_text + morph_text + new_line
+        structure_text = structure_text + morph_text + end_structure
 
-        return structure_text
-
-    def offset_creator(self):
-        text_array = []
+        offset_array = []
         offset_base = np.round([np.multiply(1, (-1) * yi * self.phase_offset) for yi in range(self.structure[0])],
                                decimals=1)
         offset_vec = offset_base
@@ -519,36 +399,30 @@ class Evosoro:
 
         for row in offset_map:
             temp_text = ",".join([str(elem) for elem in row])
-            text_array.append(temp_text)
+            offset_array.append(temp_text)
 
-        pre_text = "    <PhaseOffset>"
-        offset_text = "\n".join(['''    <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in text_array])
-        post_text = "    </PhaseOffset>\n"
+        pre_text = "        <PhaseOffset>"
+        offset_text = "\n".join(['''        <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in offset_array])
+        post_text = "        </PhaseOffset>\n"
 
         phase_offset_text = pre_text + "\n" + offset_text + "\n" + post_text
-        return phase_offset_text
 
-    def stiffness_creator(self, stiffness_array):
-        text_array = []
-        for row in stiffness_array:
+        stiff_array = []
+        for row in self.stiffness_array:
             temp_text = ",".join([str(elem) for elem in row])
-            text_array.append(temp_text)
+            stiff_array.append(temp_text)
 
-        pre_text = '''    <Stiffness>
-        <MinElasticMod>1000.0</MinElasticMod>
+        pre_text = '''        <Stiffness>
+        <MinElasticMod>10000.0</MinElasticMod>
         <MaxElasticMod>1000000</MaxElasticMod>'''
 
-        offset_text = "\n".join(['''    <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in text_array])
-        post_text ='''    </Stiffness>'''
+        offset_text = "\n".join(['''        <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in stiff_array])
+        post_text = '''        </Stiffness>'''
+        stiffness_text = pre_text + "\n" + offset_text + "\n" + post_text
 
-        phase_offset_text = pre_text + "\n" + offset_text + "\n" + post_text
-        return phase_offset_text
-
-    def end_creator(self):
         end_text = '''
         </Structure>
         </VXC>
         </VXA>'''
 
-        return end_text
-
+        self.vxa_file = init_text + voxel_text + structure_text + phase_offset_text + stiffness_text + end_text
