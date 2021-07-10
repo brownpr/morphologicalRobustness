@@ -194,10 +194,10 @@ class Evosoro:
         <InitCmTime>''' + str(InitCmTime) + '''</InitCmTime>
         </StopCondition>
         <GA>
-        <WriteFitnessFile>''' + str(WriteFitnessFile) +'''</WriteFitnessFile>
-        <FitnessFileName>''' + str(FitnessFileName) +'''</FitnessFileName>
-        <QhullTmpFile>''' + str(QhullTmpFile) +'''</QhullTmpFile>
-        <CurvaturesTmpFile>''' + str(CurvaturesTmpFile) +'''</CurvaturesTmpFile>
+        <WriteFitnessFile>''' + str(WriteFitnessFile) + '''</WriteFitnessFile>
+        <FitnessFileName>''' + str(FitnessFileName) + '''</FitnessFileName>
+        <QhullTmpFile>''' + str(QhullTmpFile) + '''</QhullTmpFile>
+        <CurvaturesTmpFile>''' + str(CurvaturesTmpFile) + '''</CurvaturesTmpFile>
         </GA>
         </Simulator>
         <Environment>

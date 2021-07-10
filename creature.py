@@ -1,7 +1,5 @@
 import csv
 import json
-import random
-import sys
 
 import numpy as np
 
@@ -34,8 +32,7 @@ class Creature:
         if name:
             self.name = name                                        # string, Set creature's name
         elif not index:
-            print("SIMULATION STOPPED. When creating a creature, you must provide either name or index!")
-            sys.exit()
+            raise Warning("SIMULATION STOPPED. When creating a creature, you must provide either name or index!")
         else:
             self.name = "_creature" + str(index)                    # string, Set creature's name
 
@@ -65,7 +62,7 @@ class Creature:
             self.stiffness_array[index[0]][index[1]][index[2]] = voxel.stiffness
 
     def get_neural_network(self):
-        self.neural_net = NeuralNet(self.settings["nn_parameters"]["num_inputs"])
+        self.neural_net = NeuralNet()
 
     def get_neighbours_and_sections(self):
         # Get region areas
@@ -271,7 +268,7 @@ class Creature:
             raise Exception("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
 
         if isinstance(sections, tuple):
-            list(sections)
+            sections = list(sections)
         elif isinstance(sections, int):
             sections = [sections]
         assert isinstance(sections, list)
@@ -328,6 +325,7 @@ class Creature:
 
         # update the morphology of the creature
         self.update_morphology()
+        print("hello")
 
     def remove_voxels_spherical_region(self, centre_voxel, radius):
         # Kinda no point running

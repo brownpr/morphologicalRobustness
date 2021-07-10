@@ -4,7 +4,7 @@ import json
 
 class NeuralNet:
     # Neural Network class, used to create and update creatures neural network
-    def __init__(self, num_inputs):
+    def __init__(self):
         # Load parameters
         settings_file = open("settings.json")
         self.settings = json.load(settings_file)["nn_parameters"]
@@ -87,7 +87,7 @@ class NeuralNet:
         # ARGUMENTS:
         # X - input data size (n_x, 1)
         # Parameters - python dictionary with weight and biases
-        # af - either t or s, used to choose which activation fucntion to use
+        # af - either t or s, used to choose which activation function to use
 
         # RETURNS:
         # Y - Output array of size (n_y, 1)
@@ -102,7 +102,7 @@ class NeuralNet:
         assert isinstance(self.parameters, dict)
         assert self.activation_function.lower() == "s" or self.activation_function.lower() == "t"
 
-        # retrive parameters
+        # retrieve parameters
         w1 = self.parameters["w1"]
         b1 = self.parameters["b1"]
         w2 = self.parameters["w2"]
@@ -141,7 +141,7 @@ class NeuralNet:
         assert len(self.bounds) == 2
         assert isinstance(self.noise, float)
 
-        # retrive parameters
+        # retrieve parameters
         w1 = self.parameters["w1"]
         b1 = self.parameters["b1"]
         w2 = self.parameters["w2"]

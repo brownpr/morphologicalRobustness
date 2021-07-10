@@ -3,12 +3,9 @@ import os
 import datetime as dt
 import operator
 import subprocess as sub
-import sys
 import time
 import shutil
 from copy import deepcopy
-
-import numpy as np
 
 from creature import Creature
 
@@ -66,7 +63,7 @@ class Population:
 
         # If the creature to be added to a damaged population class, damage said creatures before adding them
         if self.damaged_population:
-            self.population = self.inflict_damage()
+            self.population = self.inflict_damage(self.damage_type, self.damage_arguments)
 
     def run_genetic_algorithm(self, generation_size=None):
         # Runs genetic algorithm by evaluating each creature and then changing their morphology accordingly
@@ -207,7 +204,7 @@ class Population:
         print(str(dt.datetime.now()) + " CURRENT POPULATION: ")
         print([str(ctr.name) + ":" + str(ctr.genome) for ctr in self.population.values()])
 
-        # Top creaturetop_creature
+        # Top creature
         top_creature = sorted_pop[0]
 
         return top_creature
@@ -252,46 +249,47 @@ class Population:
 
         assert isinstance(damage_type, str)
         assert isinstance(damage_arguments, list)
+        assert isinstance(damage_arguments, list)
 
         # SECTION DAMAGES
         if damage_type == "remove_sect":
             assert len(damage_arguments) == 1
-            assert isinstance(damage_arguments, list)
+            assert isinstance(damage_arguments[0], tuple)
             for creature in population_to_damage.values():
-                creature.remove_voxels_sections(damage_arguments)
+                creature.remove_voxels_sections(damage_arguments[0])
 
         elif damage_type == "stiff_sect_mult":
             assert len(damage_arguments) == 2
-            assert isinstance(damage_arguments[0], list)
-            assert isinstance(damage_arguments[1], float)
+            assert isinstance(damage_arguments[0], tuple)
+            assert isinstance(damage_arguments[1], float) or isinstance(damage_arguments[1], int)
             for creature in population_to_damage.values():
                 creature.stiffness_change_sections(damage_arguments[0], multiply_stiffness=damage_arguments[1])
 
         elif damage_type == "stiff_sect_div":
             assert len(damage_arguments) == 2
-            assert isinstance(damage_arguments[0], list)
-            assert isinstance(damage_arguments[1], float)
+            assert isinstance(damage_arguments[0], tuple)
+            assert isinstance(damage_arguments[1], float) or isinstance(damage_arguments[1], int)
             for creature in population_to_damage.values():
                 creature.stiffness_change_sections(damage_arguments[0], divide_stiffness=damage_arguments[1])
 
         elif damage_type == "stiff_sect_set":
             assert len(damage_arguments) == 2
-            assert isinstance(damage_arguments[0], list)
-            assert isinstance(damage_arguments[1], float)
+            assert isinstance(damage_arguments[0], tuple)
+            assert isinstance(damage_arguments[1], float) or isinstance(damage_arguments[1], int)
             for creature in population_to_damage.values():
                 creature.stiffness_change_sections(damage_arguments[0], set_new_stiffness=damage_arguments[1])
 
         elif damage_type == "stiff_sect_add":
             assert len(damage_arguments) == 2
-            assert isinstance(damage_arguments[0], list)
-            assert isinstance(damage_arguments[1], float)
+            assert isinstance(damage_arguments[0], tuple)
+            assert isinstance(damage_arguments[1], float) or isinstance(damage_arguments[1], int)
             for creature in population_to_damage.values():
                 creature.stiffness_change_sections(damage_arguments[0], increase_stiffness=damage_arguments[1])
 
         elif damage_type == "stiff_sect_red":
             assert len(damage_arguments) == 2
-            assert isinstance(damage_arguments[0], list)
-            assert isinstance(damage_arguments[1], float)
+            assert isinstance(damage_arguments[0], tuple)
+            assert isinstance(damage_arguments[1], float) or isinstance(damage_arguments[1], int)
             for creature in population_to_damage.values():
                 creature.stiffness_change_sections(damage_arguments[0], reduce_stiffness=damage_arguments[1])
 
@@ -299,7 +297,7 @@ class Population:
         elif damage_type == "remove_spher":
             assert len(damage_arguments) == 2
             assert len(damage_arguments[0]) == 3
-            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[0], tuple)
             assert isinstance(damage_arguments[1], int)
 
             for creature in population_to_damage.values():
@@ -308,7 +306,7 @@ class Population:
         elif damage_type == "stiff_spher_mult":
             assert len(damage_arguments) == 3
             assert len(damage_arguments[0]) == 3
-            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[0], tuple)
             assert isinstance(damage_arguments[1], int)
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
@@ -319,7 +317,7 @@ class Population:
         elif damage_type == "stiff_spher_div":
             assert len(damage_arguments) == 3
             assert len(damage_arguments[0]) == 3
-            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[0], tuple)
             assert isinstance(damage_arguments[1], int)
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
@@ -330,7 +328,7 @@ class Population:
         elif damage_type == "stiff_spher_set":
             assert len(damage_arguments) == 3
             assert len(damage_arguments[0]) == 3
-            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[0], tuple)
             assert isinstance(damage_arguments[1], int)
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
@@ -341,7 +339,7 @@ class Population:
         elif damage_type == "stiff_spher_add":
             assert len(damage_arguments) == 3
             assert len(damage_arguments[0]) == 3
-            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[0], tuple)
             assert isinstance(damage_arguments[1], int)
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
@@ -352,7 +350,7 @@ class Population:
         elif damage_type == "stiff_spher_red":
             assert len(damage_arguments) == 3
             assert len(damage_arguments[0]) == 3
-            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[0], tuple)
             assert isinstance(damage_arguments[1], int)
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 

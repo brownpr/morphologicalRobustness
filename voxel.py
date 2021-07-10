@@ -1,7 +1,5 @@
 import json
 
-import numpy as np
-
 
 class Voxel:
     def __init__(self, coordinates, material_number):

@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
         damaged_population = Population(population=damaged_population_dict, damaged_population=True)
 
-        # Inflict damage on each creature (choose damage type)
+
 
         # List of damage types and their arguments:
         #
@@ -50,7 +50,8 @@ if __name__ == "__main__":
         # stiff_spher_red           3 -- tuple, int, float -- centre voxel coordinates, affected radius, reduce stiffness by input
         #
 
-        damaged_population.inflict_damage(damage_type="remove_sect", damage_arguments=[(1, 3)])
+        # Inflict damage on each creature (choose damage type)
+        damaged_population.inflict_damage(damage_type="stiff_sect_mult", damage_arguments=[(1, 3), 5])
 
         # Evaluate creatures for n evaluations
         damaged_population.run_genetic_algorithm(generation_size=1)
