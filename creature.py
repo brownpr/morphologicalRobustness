@@ -234,14 +234,36 @@ class Creature:
         # Update stiffness of voxels
         new_stiffness_array = np.add(self.stiffness_array, stiffness_delta)
 
-        # Set upper and lower bounds to stiffness array
-        np.where(new_stiffness_array < self.settings["structure"]["min_stiffness"],
-                 self.settings["structure"]["min_stiffness"], new_stiffness_array)
-        np.where(new_stiffness_array > self.settings["structure"]["max_stiffness"],
-                 self.settings["structure"]["max_stiffness"], new_stiffness_array)
-
         # Fix morphology, restore actuator voxels stiffness and material number and remove isolated voxels
         self.update_morphology(new_stiffness_array)
+
+    def find_voxel_by_coordinates(self, coordinates):
+        for index, voxel in self.voxels.values():
+            if coordinates == index:
+                return voxel
+            else:
+                raise Exception("ERROR: Voxel not found, please ensure given coordinates are formatted correctly.")
+
+    def find_voxels_in_radius(self, centre_voxel_coordinates, radius):
+        if radius == 1:
+            raise Warning("WARNING: remove_spherical_region radius input of 1 will only remove the centre voxel and "
+                          "none of its neighbours.")
+        elif radius < 1:
+            raise Exception("ERROR: Cannot ")
+
+        # Find centre voxel
+        centre_voxel = self.find_voxel_by_coordinates(centre_voxel_coordinates)
+
+        # Create list of voxels that are in the desired area
+        voxels_in_radius = set([centre_voxel])
+        while radius > 0:
+            affected_voxels = list(voxels_in_radius)
+            for voxel in affected_voxels:
+                voxels_in_radius.update(voxel.neighbours)
+                affected_voxels.remove(voxel)
+                radius = radius - 1
+
+        return voxels_in_radius
 
     def remove_voxels_sections(self, sections):
         if isinstance(sections, tuple):
@@ -325,22 +347,11 @@ class Creature:
 
         # update the morphology of the creature
         self.update_morphology()
-        print("hello")
 
-    def remove_voxels_spherical_region(self, centre_voxel, radius):
-        # Kinda no point running
-        if radius < 2:
-            print("WARNING: remove_spherical_region radius input of 1 will only remove the centre voxel and none of its"
-                  "neighbours.")
+    def remove_voxels_spherical_region(self, centre_voxel_coordinates, radius):
 
-        # Create list of voxels that are in the desired area
-        voxels_in_radius = set([centre_voxel])
-        while radius > 0:
-            affected_voxels = list(voxels_in_radius)
-            for voxel in affected_voxels:
-                voxels_in_radius.update(voxel.neighbours)
-                affected_voxels.remove(voxel)
-                radius = radius - 1
+        # Get list of voxels in radius
+        voxels_in_radius = self.find_voxels_in_radius(centre_voxel_coordinates, radius)
 
         # Set material number for voxels in radius to zero
         for voxel in voxels_in_radius:
@@ -353,20 +364,16 @@ class Creature:
         # update the morphology of the creature
         self.update_morphology()
 
-    def stiffness_change_spherical_region(self, centre_voxel, radius, multiply_stiffness=None, divide_stiffness=None,
-                                          set_new_stiffness=None, reduce_stiffness=None, increase_stiffness=None):
+    def stiffness_change_spherical_region(self, centre_voxel_coordinates, radius, multiply_stiffness=None,
+                                          divide_stiffness=None, set_new_stiffness=None, reduce_stiffness=None,
+                                          increase_stiffness=None):
+
         # If no stiffness change provided stop simulation
         if not any((multiply_stiffness, divide_stiffness, set_new_stiffness, reduce_stiffness, increase_stiffness)):
             raise Exception("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
-        
-        # Create list of voxels that are in the desired area
-        voxels_in_radius = set([centre_voxel])
-        while radius > 0:
-            affected_voxels = list(voxels_in_radius)
-            for voxel in affected_voxels:
-                voxels_in_radius.update(voxel.neighbours)
-                affected_voxels.remove(voxel)
-                radius = radius - 1
+
+        # Get list of voxels in radius
+        voxels_in_radius = self.find_voxels_in_radius(centre_voxel_coordinates, radius)
 
         # Multiplies stiffness of affected region by input
         if multiply_stiffness:

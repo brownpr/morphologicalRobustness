@@ -51,7 +51,7 @@ if __name__ == "__main__":
         #
 
         # Inflict damage on each creature (choose damage type)
-        damaged_population.inflict_damage(damage_type="stiff_sect_mult", damage_arguments=[(1, 3), 5])
+        damaged_population.inflict_damage(damage_type="stiff_sect_red", damage_arguments=[(1, 3), 300000])
 
         # Evaluate creatures for n evaluations
         damaged_population.run_genetic_algorithm(generation_size=1)
