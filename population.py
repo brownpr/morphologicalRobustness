@@ -23,7 +23,7 @@ class Population:
         self.damaged_population = damaged_population    # bool, has population been damaged?
         self.damage_type = None                         # string, what type of damage has been inflicted on creature
         self.damage_arguments = None                    # Previously used arguments (all creatures created in a damaged
-        #                                                       population will receive the same damage as the originals)
+        #                                                   population will receive the same damage as the originals)
 
         # Create an example creature to copy from (as many parameters don't change when creating an additional creature)
         self.base_creature = Creature(name="base_creature")
@@ -301,7 +301,7 @@ class Population:
             assert isinstance(damage_arguments[1], int)
 
             for creature in population_to_damage.values():
-                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1])
+                creature.remove_voxels_spherical_region(damage_arguments[0], damage_arguments[1])
 
         elif damage_type == "stiff_spher_mult":
             assert len(damage_arguments) == 3
@@ -311,8 +311,8 @@ class Population:
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
             for creature in population_to_damage.values():
-                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
-                                                   multiply_stiffness=damage_arguments[3])
+                creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
+                                                           multiply_stiffness=damage_arguments[3])
 
         elif damage_type == "stiff_spher_div":
             assert len(damage_arguments) == 3
@@ -322,8 +322,8 @@ class Population:
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
             for creature in population_to_damage.values():
-                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
-                                                   divide_stiffness=damage_arguments[3])
+                creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
+                                                           divide_stiffness=damage_arguments[3])
 
         elif damage_type == "stiff_spher_set":
             assert len(damage_arguments) == 3
@@ -333,8 +333,8 @@ class Population:
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
             for creature in population_to_damage.values():
-                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
-                                                   set_new_stiffness=damage_arguments[3])
+                creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
+                                                           set_new_stiffness=damage_arguments[3])
 
         elif damage_type == "stiff_spher_add":
             assert len(damage_arguments) == 3
@@ -344,8 +344,8 @@ class Population:
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
             for creature in population_to_damage.values():
-                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
-                                                   increase_stiffness=damage_arguments[3])
+                creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
+                                                           increase_stiffness=damage_arguments[3])
 
         elif damage_type == "stiff_spher_red":
             assert len(damage_arguments) == 3
@@ -355,8 +355,8 @@ class Population:
             assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
 
             for creature in population_to_damage.values():
-                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
-                                                   reduce_stiffness=damage_arguments[3])
+                creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
+                                                           reduce_stiffness=damage_arguments[3])
 
         else:
             raise Exception("ERROR: Unknown damage type.")

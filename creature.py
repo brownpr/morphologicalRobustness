@@ -238,24 +238,24 @@ class Creature:
         self.update_morphology(new_stiffness_array)
 
     def find_voxel_by_coordinates(self, coordinates):
-        for index, voxel in self.voxels.values():
+        for index, voxel in self.voxels.items():
             if coordinates == index:
                 return voxel
-            else:
-                raise Exception("ERROR: Voxel not found, please ensure given coordinates are formatted correctly.")
+
+        raise Exception("ERROR: Voxel not found, please ensure given coordinates are formatted correctly.")
 
     def find_voxels_in_radius(self, centre_voxel_coordinates, radius):
         if radius == 1:
             raise Warning("WARNING: remove_spherical_region radius input of 1 will only remove the centre voxel and "
                           "none of its neighbours.")
         elif radius < 1:
-            raise Exception("ERROR: Cannot ")
+            raise Exception("ERROR: Cannot have a radius less than 1.")
 
         # Find centre voxel
         centre_voxel = self.find_voxel_by_coordinates(centre_voxel_coordinates)
 
         # Create list of voxels that are in the desired area
-        voxels_in_radius = set([centre_voxel])
+        voxels_in_radius = {centre_voxel}
         while radius > 0:
             affected_voxels = list(voxels_in_radius)
             for voxel in affected_voxels:

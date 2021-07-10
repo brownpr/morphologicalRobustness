@@ -27,8 +27,6 @@ if __name__ == "__main__":
 
         damaged_population = Population(population=damaged_population_dict, damaged_population=True)
 
-
-
         # List of damage types and their arguments:
         #
         # SECTION DAMAGES:
@@ -51,7 +49,7 @@ if __name__ == "__main__":
         #
 
         # Inflict damage on each creature (choose damage type)
-        damaged_population.inflict_damage(damage_type="stiff_sect_red", damage_arguments=[(1, 3), 300000])
+        damaged_population.inflict_damage(damage_type="remove_sect", damage_arguments=[(1,3)])
 
         # Evaluate creatures for n evaluations
         damaged_population.run_genetic_algorithm(generation_size=1)

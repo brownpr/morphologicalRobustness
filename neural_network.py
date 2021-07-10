@@ -28,7 +28,7 @@ class NeuralNet:
         # calculates sigmoid
         # ARGUMENTS:
         # X - scalar or numpy array of any size
-
+        #
         # RETURNS:
         # S - scalar or array of X
 
@@ -119,6 +119,8 @@ class NeuralNet:
             A1 = np.tanh(Z1)
             Z2 = np.dot(w2, A1) + b2
             Y = np.tanh(Z2)
+        else:
+            raise Exception("ERROR: Unknown activation function.")
 
         assert (Y.shape == (w2.shape[0], X.shape[1]))
 
