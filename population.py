@@ -24,6 +24,9 @@ class Population:
         self.population = {}                            # dict, Evaluation population
         self.full_population = {}                       # dict, Full population
         self.damaged_population = damaged_population    # bool, has population been damaged?
+        self.damage_type = None                         # string, what type of damage has been inflicted on creature
+        self.damage_arguments = None                    # Previously used arguments (all creatures created in a damaged
+        #                                                       population will receive the same damage as the originals)
 
         # Create an example creature to copy from (as many parameters don't change when creating an additional creature)
         self.base_creature = Creature(name="base_creature")
@@ -65,19 +68,12 @@ class Population:
         if self.damaged_population:
             self.population = self.inflict_damage()
 
-    def run_genetic_algorithm(self):
+    def run_genetic_algorithm(self, generation_size=None):
         # Runs genetic algorithm by evaluating each creature and then changing their morphology accordingly
 
-        # Create file to save creature files, if file exists stop sim
-        if not os.path.exists("generated_files"):
-            os.mkdir("generated_files")
-        else:
-            print("STOPPING SIMULATION: Creature files may already exist. Please delete or "
-                  "rename the 'generated_files' folder.")
-            sys.exit()
-
         # Retrieve parameters
-        gen_size = self.settings["parameters"]["gen_size"]
+        if generation_size is None:
+            generation_size = self.settings["parameters"]["gen_size"]
 
         # Print Creature Genomes
         if self.damaged_population:
@@ -88,20 +84,20 @@ class Population:
         print([str(ctr.name) for ctr in self.population.values()])
 
         # Initialize genetic algorithm
-        for gen_num in range(gen_size):
+        for generation_num in range(generation_size):
             # Provide user with generation number
-            print(str(dt.datetime.now()) + " CURRENT GENERATION NUMBER: " + str(gen_num))
+            print(str(dt.datetime.now()) + " CURRENT GENERATION NUMBER: " + str(generation_num))
 
             # Evaluate population
-            self.evaluate_population(gen_num)
+            self.evaluate_population(generation_num)
 
-            if not gen_num == gen_size - 1:
+            if not generation_num == generation_size - 1:
                 # Create new population and retrieve top performing creature
                 top_creature = self.new_population()
             else:
                 sorted_pop, top_creature = self.sort_population()
 
-            # Print gen top performers details
+            # Print generation top performers details
             print(str(dt.datetime.now()) + " Top performer:" + top_creature.name + ". Fitness: " + str(
                 top_creature.fitness_eval))
 
@@ -112,7 +108,7 @@ class Population:
 
     def evaluate_population(self, generation_number):
         # ARGUMENTS
-        # - gen_num:        int, Current generation
+        # - generation_num:        int, Current generation
         # - population:     dict, creatures to evaluate
         # - episode_size:   int, Number of episodes used to evaluate creatures
 
@@ -241,7 +237,7 @@ class Population:
         # Save files
         dict_sort_crts = [{ctr.name: ctr.fitness_eval} for ctr in sorted_pop]
         if self.damaged_population:
-            file_name = "damaged_creature_evolution"
+            file_name = "damaged_creature_evolution_" + self.damage_type
         else:
             file_name = "creature_evolution"
 
@@ -249,3 +245,124 @@ class Population:
             json.dump(dict_sort_crts, ctr_file, sort_keys=True, indent=4)
         ctr_file.close()
 
+    def inflict_damage(self, damage_type, damage_arguments, population_to_damage=None):
+
+        if population_to_damage is None:
+            population_to_damage = self.population
+
+        assert isinstance(damage_type, str)
+        assert isinstance(damage_arguments, list)
+
+        # SECTION DAMAGES
+        if damage_type == "remove_sect":
+            assert len(damage_arguments) == 1
+            assert isinstance(damage_arguments, list)
+            for creature in population_to_damage.values():
+                creature.remove_voxels_sections(damage_arguments)
+
+        elif damage_type == "stiff_sect_mult":
+            assert len(damage_arguments) == 2
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], float)
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], multiply_stiffness=damage_arguments[1])
+
+        elif damage_type == "stiff_sect_div":
+            assert len(damage_arguments) == 2
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], float)
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], divide_stiffness=damage_arguments[1])
+
+        elif damage_type == "stiff_sect_set":
+            assert len(damage_arguments) == 2
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], float)
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], set_new_stiffness=damage_arguments[1])
+
+        elif damage_type == "stiff_sect_add":
+            assert len(damage_arguments) == 2
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], float)
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], increase_stiffness=damage_arguments[1])
+
+        elif damage_type == "stiff_sect_red":
+            assert len(damage_arguments) == 2
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], float)
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], reduce_stiffness=damage_arguments[1])
+
+        # SPHERICAL DAMAGES
+        elif damage_type == "remove_spher":
+            assert len(damage_arguments) == 2
+            assert len(damage_arguments[0]) == 3
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], int)
+
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1])
+
+        elif damage_type == "stiff_spher_mult":
+            assert len(damage_arguments) == 3
+            assert len(damage_arguments[0]) == 3
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], int)
+            assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
+
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
+                                                   multiply_stiffness=damage_arguments[3])
+
+        elif damage_type == "stiff_spher_div":
+            assert len(damage_arguments) == 3
+            assert len(damage_arguments[0]) == 3
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], int)
+            assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
+
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
+                                                   divide_stiffness=damage_arguments[3])
+
+        elif damage_type == "stiff_spher_set":
+            assert len(damage_arguments) == 3
+            assert len(damage_arguments[0]) == 3
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], int)
+            assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
+
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
+                                                   set_new_stiffness=damage_arguments[3])
+
+        elif damage_type == "stiff_spher_add":
+            assert len(damage_arguments) == 3
+            assert len(damage_arguments[0]) == 3
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], int)
+            assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
+
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
+                                                   increase_stiffness=damage_arguments[3])
+
+        elif damage_type == "stiff_spher_red":
+            assert len(damage_arguments) == 3
+            assert len(damage_arguments[0]) == 3
+            assert isinstance(damage_arguments[0], list)
+            assert isinstance(damage_arguments[1], int)
+            assert isinstance(damage_arguments[2], float) or isinstance(damage_arguments[2], int)
+
+            for creature in population_to_damage.values():
+                creature.stiffness_change_sections(damage_arguments[0], damage_arguments[1],
+                                                   reduce_stiffness=damage_arguments[3])
+
+        else:
+            raise Exception("ERROR: Unknown damage type.")
+
+        # Update damage type and damage arguments
+        self.damage_type = damage_type
+        self.damage_arguments = damage_arguments

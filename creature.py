@@ -80,7 +80,7 @@ class Creature:
                 y_range = [y * range_z_sections, (y + 1) * range_z_sections]
                 for x in range(0, x_sections):
                     x_range = [x * range_z_sections, (x + 1) * range_z_sections]
-                    section_range_dictionary["section_" + str(section_counter)] = [x_range, y_range, z_range]
+                    section_range_dictionary[str(section_counter)] = [x_range, y_range, z_range]
                     section_counter += 1
 
         # Iterate thorough voxels and add their neighbours and the section they belong to
@@ -94,10 +94,10 @@ class Creature:
 
             # Find which section the x, y, z coordinates for this voxel
             for section_num, section_range in section_range_dictionary.items():
-                if (x >= section_range[0][0]) and (x <= section_range[0][1]) and (y >= section_range[1][0]) and \
-                        (y <= section_range[1][1]) and (z >= section_range[2][0]) and (z <= section_range[2][1]) and \
+                if (x >= section_range[0][0]) and (x < section_range[0][1]) and (y >= section_range[1][0]) and \
+                        (y < section_range[1][1]) and (z >= section_range[2][0]) and (z < section_range[2][1]) and \
                         voxel.section is None:
-                    voxel.section = section_num
+                    voxel.section = int(section_num)
 
     def update_creature_info(self, generation, episode):
         # Updates basic creature information
@@ -163,7 +163,7 @@ class Creature:
                 neighbour_states = [neighbour.material_number for neighbour in voxel.neighbours]
                 # if all neighbouring voxels are 0 delete current cube
                 if not any(neighbour_states):
-                    voxel.material_number = 0
+                    voxel.remove()
 
         # Update creatures morphology
         for index, voxel in self.voxels.items():
@@ -234,7 +234,6 @@ class Creature:
         stiffness_delta = np.multiply((vectorized_nn(ke_delta, displacement_delta)[0]),
                                       self.settings["structure"]["min_stiffness"])
 
-
         # Update stiffness of voxels
         new_stiffness_array = np.add(self.stiffness_array, stiffness_delta)
 
@@ -250,12 +249,17 @@ class Creature:
     def remove_voxels_sections(self, sections):
         if isinstance(sections, tuple):
             sections = list(sections)
+        elif isinstance(sections, int):
+            sections = [sections]
         assert isinstance(sections, list)
 
-        for voxel in self.voxels:
+        for voxel in self.voxels.values():
             if voxel.section in sections:
                 if voxel.can_be_changed and voxel.material_number:
-                    voxel.material_number = 0
+                    voxel.remove()
+
+        # Update creature name
+        self.name = self.name + "_removed_sections_" + "_".join(str(elem) for elem in sections)
 
         # update the morphology of the creature
         self.update_morphology()
@@ -264,38 +268,63 @@ class Creature:
                                   set_new_stiffness=None, reduce_stiffness=None, increase_stiffness=None):
         # If no stiffness change provided stop simulation
         if not any((multiply_stiffness, divide_stiffness, set_new_stiffness, reduce_stiffness, increase_stiffness)):
-            print("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
-            sys.exit()
+            raise Exception("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
+
+        if isinstance(sections, tuple):
+            list(sections)
+        elif isinstance(sections, int):
+            sections = [sections]
+        assert isinstance(sections, list)
 
         # Multiplies stiffness of affected region by input
         if multiply_stiffness:
-            for voxel in sections:
-                if voxel.can_be_changed:
-                    voxel.update_with_stiffness(voxel.stiffness*multiply_stiffness)
+            for voxel in self.voxels.values():
+                if voxel.section in sections:
+                    if voxel.can_be_changed:
+                        voxel.update_with_stiffness(voxel.stiffness*multiply_stiffness)
+
+            # Update creature name
+            self.name = self.name + "_stiffness_multiplied_sections_" + "_".join(str(elem) for elem in sections)
 
         # Divides stiffness of affected region by input
         if divide_stiffness:
-            for voxel in sections:
-                if voxel.can_be_changed:
-                    voxel.update_with_stiffness(voxel.stiffness/divide_stiffness)
+            for voxel in self.voxels.values():
+                if voxel.section in sections:
+                    if voxel.can_be_changed:
+                        voxel.update_with_stiffness(voxel.stiffness/divide_stiffness)
+
+            # Update creature name
+            self.name = self.name + "_stiffness_divided_sections_" + "_".join(str(elem) for elem in sections)
 
         # Changes stiffness to given input
-        if increase_stiffness:
-            for voxel in sections:
-                if voxel.can_be_changed:
-                    voxel.update_with_stiffness(set_new_stiffness)
+        if set_new_stiffness:
+            for voxel in self.voxels.values():
+                if voxel.section in sections:
+                    if voxel.can_be_changed:
+                        voxel.update_with_stiffness(set_new_stiffness)
+
+            # Update creature name
+            self.name = self.name + "_stiffness_changed_sections_" + "_".join(str(elem) for elem in sections)
 
         # Add to stiffness of affected region by input
         if increase_stiffness:
-            for voxel in sections:
-                if voxel.can_be_changed:
-                    voxel.update_with_stiffness(voxel.stiffness + increase_stiffness)
+            for voxel in self.voxels.values():
+                if voxel.section in sections:
+                    if voxel.can_be_changed:
+                        voxel.update_with_stiffness(voxel.stiffness + increase_stiffness)
+
+            # Update creature name
+            self.name = self.name + "_stiffness_increased_sections_" + "_".join(str(elem) for elem in sections)
 
         # reduce stiffness of affected region by input
-        if multiply_stiffness:
-            for voxel in sections:
-                if voxel.can_be_changed:
-                    voxel.update_with_stiffness(voxel.stiffness - reduce_stiffness)
+        if reduce_stiffness:
+            for voxel in self.voxels.values():
+                if voxel.section in sections:
+                    if voxel.can_be_changed:
+                        voxel.update_with_stiffness(voxel.stiffness - reduce_stiffness)
+
+            # Update creature name
+            self.name = self.name + "_stiffness_reduced_sections_" + "_".join(str(elem) for elem in sections)
 
         # update the morphology of the creature
         self.update_morphology()
@@ -318,7 +347,10 @@ class Creature:
         # Set material number for voxels in radius to zero
         for voxel in voxels_in_radius:
             if voxel.can_be_changed and voxel.material_number:
-                voxel.material_number = 0
+                voxel.remove()
+
+        # Update creature name
+        self.name = self.name + "_sphere_removed_radius_" + str(radius)
 
         # update the morphology of the creature
         self.update_morphology()
@@ -327,8 +359,7 @@ class Creature:
                                           set_new_stiffness=None, reduce_stiffness=None, increase_stiffness=None):
         # If no stiffness change provided stop simulation
         if not any((multiply_stiffness, divide_stiffness, set_new_stiffness, reduce_stiffness, increase_stiffness)):
-            print("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
-            sys.exit()
+            raise Exception("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
         
         # Create list of voxels that are in the desired area
         voxels_in_radius = set([centre_voxel])
@@ -345,17 +376,26 @@ class Creature:
                 if voxel.can_be_changed:
                     voxel.update_with_stiffness(voxel.stiffness*multiply_stiffness)
 
+            # Update creature name
+            self.name = self.name + "_sphere_multiplied_radius_" + str(radius)
+
         # Divides stiffness of affected region by input
         if divide_stiffness:
             for voxel in voxels_in_radius:
                 if voxel.can_be_changed:
                     voxel.update_with_stiffness(voxel.stiffness/divide_stiffness)
 
+            # Update creature name
+            self.name = self.name + "_sphere_divided_radius_" + str(radius)
+
         # Changes stiffness to given input
-        if increase_stiffness:
+        if set_new_stiffness:
             for voxel in voxels_in_radius:
                 if voxel.can_be_changed:
                     voxel.update_with_stiffness(set_new_stiffness)
+
+            # Update creature name
+            self.name = self.name + "_sphere_changed_radius_" + str(radius)
 
         # Add to stiffness of affected region by input
         if increase_stiffness:
@@ -363,11 +403,17 @@ class Creature:
                 if voxel.can_be_changed:
                     voxel.update_with_stiffness(voxel.stiffness + increase_stiffness)
 
+            # Update creature name
+            self.name = self.name + "_sphere_increased_radius_" + str(radius)
+
         # reduce stiffness of affected region by input
-        if multiply_stiffness:
+        if reduce_stiffness:
             for voxel in voxels_in_radius:
                 if voxel.can_be_changed:
                     voxel.update_with_stiffness(voxel.stiffness - reduce_stiffness)
+
+            # Update creature name
+            self.name = self.name + "_sphere_divided_radius_" + str(radius)
 
         # update the morphology of the creature
         self.update_morphology()

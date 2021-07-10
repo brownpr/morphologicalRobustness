@@ -36,3 +36,7 @@ class Voxel:
             else:
                 self.stiffness = new_stiffness
 
+    def remove(self):
+        if self.can_be_changed:
+            self.material_number = 0
+            self.stiffness = self.settings["structure"]["min_stiffness"]
