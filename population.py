@@ -11,7 +11,7 @@ from creature import Creature
 
 
 class Population:
-    def __init__(self, population=None, damaged_population=False):
+    def __init__(self, population=None, damaged_population=False, reset_evolution=False):
         # Import settings
         settings_file = open("settings.json")
         self.settings = json.load(settings_file)
@@ -27,7 +27,7 @@ class Population:
 
         # Create an example creature to copy from (as many parameters don't change when creating an additional creature)
         self.base_creature = Creature(name="base_creature")
-        self.base_creature.get_neighbours_and_sections()
+        self.base_creature.set_neighbours_and_sections()
 
         # If population introduced into system add to self.population, else create new starting population
         if population is not None:
@@ -35,6 +35,12 @@ class Population:
         else:
             self.create_new_population((0, self.settings["parameters"]["pop_size"]))
 
+        # If reset_evolution, reset evolutionary history
+        if reset_evolution:
+            for creature in self.population.values():
+                creature.evolution = {}
+
+        # Set full population
         self.full_population = self.population          # Full population is initial population
 
     def create_new_population(self, population_range):
@@ -54,7 +60,7 @@ class Population:
             creature.name = "_creature" + str(i)
 
             # Get ANN for creature
-            creature.get_neural_network()
+            creature.set_neural_network()
 
             # Append creature to creature dictionary
             self.population[creature.name] = creature
@@ -78,12 +84,15 @@ class Population:
         else:
             print(str(dt.datetime.now()) + " INITIAL UNDAMAGED POPULATION: ")
 
-        print([str(ctr.name) for ctr in self.population.values()])
+        print([str(creature.name) for creature in self.population.values()])
 
         # Initialize genetic algorithm
         for generation_num in range(generation_size):
             # Provide user with generation number
             print(str(dt.datetime.now()) + " CURRENT GENERATION NUMBER: " + str(generation_num))
+            # Print list of creatures under evaluation
+            print(str(dt.datetime.now()) + " Population under evaluation:")
+            print([creature.name for creature in self.population.values()])
 
             # Evaluate population
             self.evaluate_population(generation_num)
@@ -95,8 +104,8 @@ class Population:
                 sorted_pop, top_creature = self.sort_population()
 
             # Print generation top performers details
-            print(str(dt.datetime.now()) + " Top performer:" + top_creature.name + ". Fitness: " + str(
-                top_creature.fitness_eval))
+            print(str(dt.datetime.now()) + " Finished evaluating population, top performing creature:"
+                  + top_creature.name + ". Fitness: " + str(top_creature.fitness_eval))
 
         if self.damaged_population:
             print(str(dt.datetime.now()) + "FINISHED SIMULATIONS FOR DAMAGED CREATURES.")
@@ -130,13 +139,19 @@ class Population:
                 sub.Popen(self.settings["evosoro_path"] + " -f  " + creature.current_file_name + ".vxa", shell=True)
 
                 # wait for fitness and pressure file existence
-                ffp = os.path.join(cwd, creature.fitness_file_name)  # ffp
+                ffp = os.path.join(cwd, creature.fitness_file_name)  # fitness file path
                 pf = os.path.join(cwd, creature.pressures_file_name)  # pressure file path
                 kefp = os.path.join(cwd, creature.ke_file_name)  # ke file path
                 sfp = os.path.join(cwd, creature.strain_file_name)  # strain file path
 
+                # wait for file to appear, if two minutes passes and there is no file raise exception
+                t = time.time()
                 while not os.path.exists(pf) or not os.path.exists(ffp):
                     time.sleep(1)
+                    toc = time.time() - t
+                    if toc > 120:
+                        raise Exception("ERROR: No pressure file or fitness file found after 120 seconds. "
+                                        "This error is commonly due to errors in the written vxa file.")
 
                 # Update creature fitness
                 creature.calculate_fitness()
@@ -181,13 +196,21 @@ class Population:
         # Retrieve parameters
         top = self.settings["parameters"]["top"]
         evolve = self.settings["parameters"]["evolve"]
+        population_size = self.settings["parameters"]["pop_size"]
+
+        if (top + evolve) > population_size:
+            raise Exception("ERROR in settings.json: please ensure that the sum of 'top' and 'evolve' is less than or "
+                            "equal to the population size.")
+        elif (top + evolve) == population_size:
+            raise Warning("WARNING: in settings.json the sum of 'top' and 'evolve' equals population size, no new"
+                          "creatures will be generated.")
 
         # Sort population
         sorted_pop, top_creature = self.sort_population()
 
         # Create new population with completely random genomes
-        num_creatures = len(self.full_population)  # Number of creatures created so far
-        new_pop_size = len(self.population) - top - evolve  # Number of new creatures to make
+        num_creatures = len(self.full_population)                   # Number of creatures created so far
+        new_pop_size = len(self.population) - top - evolve          # Number of new creatures to make
 
         # Reset population
         self.population = {}
@@ -195,14 +218,11 @@ class Population:
         self.create_new_population((num_creatures, num_creatures + new_pop_size))
 
         # Add top preforming creatures to new population
-        self.population.update({crt.name: crt for crt in sorted_pop[0:top]})
+        self.population.update({creature.name: creature for creature in sorted_pop[0:top]})
 
         # From sorted pop grab the next =evolved (num) creatures
-        self.population.update({crt.name: crt.evolve() for crt in sorted_pop[top:evolve + top]})
-
-        # Print list
-        print(str(dt.datetime.now()) + " CURRENT POPULATION: ")
-        print([str(ctr.name) + ":" + str(ctr.genome) for ctr in self.population.values()])
+        self.population.update({creature.name: creature.update_neural_network(return_self=True)
+                                for creature in sorted_pop[top:evolve + top]})
 
         # Top creature
         top_creature = sorted_pop[0]
@@ -223,7 +243,7 @@ class Population:
         return sorted_population, top_creature
 
     def save_population(self, population=None):
-        # Save data of the top preforming creatures throughout generations.
+        # Save data of the top preforming creatures throughout generations. Run at the end of evaluation
         # If pop not specified used self.population
         if population is None:
             population = self.full_population
@@ -231,18 +251,27 @@ class Population:
         # Sorted by creature performance
         sorted_pop, top_creature = self.sort_population(population)
 
-        # Save files
-        dict_sort_crts = [{ctr.name: ctr.fitness_eval} for ctr in sorted_pop]
+        # Set file name dependant on damage
         if self.damaged_population:
-            file_name = "damaged_creature_evolution_" + self.damage_type
+            file_name = "damaged_evolution_" + self.damage_type
         else:
-            file_name = "creature_evolution"
+            file_name = "undamaged_evolution"
 
-        with open("generated_files/" + file_name + ".json", "w") as ctr_file:
-            json.dump(dict_sort_crts, ctr_file, sort_keys=True, indent=4)
-        ctr_file.close()
+        # Save fitness rank of top preforming creatures for said population
 
-    def inflict_damage(self, damage_type, damage_arguments, population_to_damage=None):
+        dict_sort_creatures = [{creature.name: creature.fitness_eval} for creature in sorted_pop]
+
+        with open("generated_files/" + "performance_" + file_name + ".json", "w") as population_file:
+            json.dump(dict_sort_creatures, population_file, sort_keys=True, indent=4)
+        population_file.close()
+
+        # Save evolutionary history of creatures
+        for creature in self.population.values():
+            with open("generated_files/" + creature.name + "/evolution.json", "w") as creature_file:
+                json.dump(creature.evolution, creature_file, sort_keys=True, indent=4)
+            creature_file.close()
+
+    def inflict_damage(self, damage_type, damage_arguments, population_to_damage=None, damage_base_creature=False):
 
         if population_to_damage is None:
             population_to_damage = self.population
@@ -364,3 +393,7 @@ class Population:
         # Update damage type and damage arguments
         self.damage_type = damage_type
         self.damage_arguments = damage_arguments
+
+        # Inflict damage on the base creature.
+        if damage_base_creature:
+            self.inflict_damage(damage_type, damage_arguments, {self.base_creature.name: self.base_creature})

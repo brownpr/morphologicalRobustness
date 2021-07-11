@@ -25,7 +25,7 @@ if __name__ == "__main__":
                                                                                          .full_population)
         damaged_population_dict = {crt.name: crt for crt in undamaged_population_sorted[0:num_creatures_to_damage]}
 
-        damaged_population = Population(population=damaged_population_dict, damaged_population=True)
+        damaged_population = Population(population=damaged_population_dict, damaged_population=True, reset_evolution=True)
 
         # List of damage types and their arguments:
         #
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         #
 
         # Inflict damage on each creature (choose damage type)
-        damaged_population.inflict_damage(damage_type="remove_sect", damage_arguments=[(1,3)])
+        damaged_population.inflict_damage(damage_type="remove_sect", damage_arguments=[(1, 3)], damage_base_creature=True)
 
         # Evaluate creatures for n evaluations
         damaged_population.run_genetic_algorithm(generation_size=1)

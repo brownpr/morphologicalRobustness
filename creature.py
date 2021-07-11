@@ -61,10 +61,10 @@ class Creature:
         for index, voxel in self.voxels.items():
             self.stiffness_array[index[0]][index[1]][index[2]] = voxel.stiffness
 
-    def get_neural_network(self):
+    def set_neural_network(self):
         self.neural_net = NeuralNet()
 
-    def get_neighbours_and_sections(self):
+    def set_neighbours_and_sections(self):
         # Get region areas
         x_sections, y_sections, z_sections = self.settings["structure"]["sections"]
         range_x_section, range_y_sections, range_z_sections = np.divide(self.settings["structure"]["creature_structure"],
@@ -125,20 +125,28 @@ class Creature:
 
         if ("gen_" + str(self.generation)) not in self.evolution:
             self.evolution[("gen_" + str(self.generation))] = {}
+            # Update neural network parameters for said generation
+            self.evolution["gen_" + str(self.generation)].update(
+                {"nn_parameters": {key: str(value) for key, value in self.neural_net.parameters.items()}})
 
         if ("ep_" + str(self.episode)) not in self.evolution[("gen_" + str(self.generation))]:
             self.evolution["gen_" + str(self.generation)][("ep_" + str(self.episode))] = {}
 
-        # Update morphology and stiffness change
-        self.evolution[("gen_" + str(self.generation))][("ep_" + str(self.episode))]["morphology"] = self.phenotype.morphology
+        # Update morphology for episode
+        self.evolution[("gen_" + str(self.generation))][("ep_" + str(self.episode))]["morphology"] = \
+            str(np.reshape(self.phenotype.morphology, (self.phenotype.structure[2], self.phenotype.structure[0]
+                                                       * self.phenotype.structure[1])).tolist())
+
+        # Update stiffness array for current episode
         if self.stiffness_array is not None:
-            self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"stiffness": self.stiffness_array})
+            self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)]["stiffness"] = \
+                str(np.reshape(self.stiffness_array, (self.phenotype.structure[2], self.phenotype.structure[0]
+                                                      * self.phenotype.structure[1])).tolist())
 
         # Update fitness values in evolution
-        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"fitness_xyz": self.fitness_xyz})
+        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"fitness_xyz": str(self.fitness_xyz)})
         self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"fitness_eval": self.fitness_eval})
-        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"average_forces": self.average_forces})
-        self.evolution["gen_" + str(self.generation)].update({"nn_parameters": self.neural_net.parameters})
+        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"average_forces": str(self.average_forces.tolist())})
 
     def update_morphology(self, new_stiffness_array=None):
         # Updates creatures stiffness and morphology dependant on stiffness values
@@ -167,6 +175,14 @@ class Creature:
             # Although not needed (as no change will have occurred) this will save iterations
             if voxel.can_be_changed:
                 self.phenotype.morphology[index[0]][index[1]][index[2]] = voxel.material_number
+
+    def update_neural_network(self, return_self=False):
+        # Update neural network
+        self.neural_net.update_neural_net()
+
+        # Return self?
+        if return_self:
+            return self
 
     def calculate_fitness(self):
         # Evaluates creatures fitness by reading the saved fitness file and saves fitness evaluation. Punishes creature
@@ -228,8 +244,8 @@ class Creature:
 
         # Use NN to update the stiffness array of the creature
         vectorized_nn = np.vectorize(self.neural_net.forward_propagation)
-        stiffness_delta = np.multiply((vectorized_nn(ke_delta, displacement_delta)[0]),
-                                      self.settings["structure"]["min_stiffness"])
+        stiffness_delta, cache = vectorized_nn(ke_delta, displacement_delta)
+        stiffness_delta = np.multiply(stiffness_delta, 10000)
 
         # Update stiffness of voxels
         new_stiffness_array = np.add(self.stiffness_array, stiffness_delta)

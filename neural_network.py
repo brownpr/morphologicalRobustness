@@ -100,7 +100,7 @@ class NeuralNet:
             X = np.array(X).reshape(len(X), 1)
         assert isinstance(X, np.ndarray)
         assert isinstance(self.parameters, dict)
-        assert self.activation_function.lower() == "s" or self.activation_function.lower() == "t"
+        assert self.activation_function.lower() == "sigmoid" or self.activation_function.lower() == "tanh"
 
         # retrieve parameters
         w1 = self.parameters["w1"]
@@ -111,11 +111,11 @@ class NeuralNet:
         # Forward propagation
         Z1 = np.dot(w1, X) + b1
 
-        if self.activation_function.lower() == "s":
+        if self.activation_function.lower() == "sigmoid":
             A1 = self.sigmoid(Z1)
             Z2 = np.dot(w2, A1) + b2
             Y = self.sigmoid(Z2)
-        elif self.activation_function.lower() == "t":
+        elif self.activation_function.lower() == "tanh":
             A1 = np.tanh(Z1)
             Z2 = np.dot(w2, A1) + b2
             Y = np.tanh(Z2)
@@ -157,4 +157,5 @@ class NeuralNet:
 
         updated_params = {"w1": w1, "b1": b1, "w2": w2, "b2": b2}
 
-        return updated_params
+        self.parameters = updated_params
+
