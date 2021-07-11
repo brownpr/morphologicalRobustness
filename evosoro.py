@@ -156,6 +156,8 @@ class Evosoro:
         [lattice_dim, x_dim_adj, y_dim_adj, z_dim_adj, x_line_offset,
          y_line_offset, x_layer_offset, y_layer_offset] = self.lattice
         [vox_name, x_squeeze, y_squeeze, z_squeeze] = self.voxel
+        [mat_model, elastic_mod, plastic_mod, yield_stress, fail_model, fail_stress, fail_strain, density,
+         poissons_ration, CTE, uStatic, uDynamic, isConductive] = self.mechanical_properties
         [x_voxels, y_voxels, z_voxels] = self.structure
 
         init_text = '''<?xml version="1.0" encoding="ISO-8859-1"?>
