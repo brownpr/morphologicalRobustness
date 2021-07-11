@@ -108,9 +108,10 @@ class Population:
                   + top_creature.name + ". Fitness: " + str(top_creature.fitness_eval))
 
         if self.damaged_population:
-            print(str(dt.datetime.now()) + "FINISHED SIMULATIONS FOR DAMAGED CREATURES.")
+            print(str(dt.datetime.now()) + " FINISHED SIMULATIONS FOR " + self.damage_type.upper() +
+                  " DAMAGED CREATURES.")
         else:
-            print(str(dt.datetime.now()) + "FINISHED SIMULATIONS FOR UNDAMAGED CREATURES.")
+            print(str(dt.datetime.now()) + " FINISHED SIMULATIONS FOR UNDAMAGED CREATURES.")
 
     def evaluate_population(self, generation_number):
         # ARGUMENTS
@@ -341,7 +342,7 @@ class Population:
 
             for creature in population_to_damage.values():
                 creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
-                                                           multiply_stiffness=damage_arguments[3])
+                                                           multiply_stiffness=damage_arguments[2])
 
         elif damage_type == "stiff_spher_div":
             assert len(damage_arguments) == 3
@@ -352,7 +353,7 @@ class Population:
 
             for creature in population_to_damage.values():
                 creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
-                                                           divide_stiffness=damage_arguments[3])
+                                                           divide_stiffness=damage_arguments[2])
 
         elif damage_type == "stiff_spher_set":
             assert len(damage_arguments) == 3
@@ -363,7 +364,7 @@ class Population:
 
             for creature in population_to_damage.values():
                 creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
-                                                           set_new_stiffness=damage_arguments[3])
+                                                           set_new_stiffness=damage_arguments[2])
 
         elif damage_type == "stiff_spher_add":
             assert len(damage_arguments) == 3
@@ -374,7 +375,7 @@ class Population:
 
             for creature in population_to_damage.values():
                 creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
-                                                           increase_stiffness=damage_arguments[3])
+                                                           increase_stiffness=damage_arguments[2])
 
         elif damage_type == "stiff_spher_red":
             assert len(damage_arguments) == 3
@@ -385,7 +386,7 @@ class Population:
 
             for creature in population_to_damage.values():
                 creature.stiffness_change_spherical_region(damage_arguments[0], damage_arguments[1],
-                                                           reduce_stiffness=damage_arguments[3])
+                                                           reduce_stiffness=damage_arguments[2])
 
         else:
             raise Exception("ERROR: Unknown damage type.")

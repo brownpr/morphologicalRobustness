@@ -272,12 +272,12 @@ class Creature:
 
         # Create list of voxels that are in the desired area
         voxels_in_radius = {centre_voxel}
-        while radius > 0:
+        while radius > 1:
             affected_voxels = list(voxels_in_radius)
-            for voxel in affected_voxels:
+            for i in range(len(affected_voxels)):
+                voxel = affected_voxels[i]
                 voxels_in_radius.update(voxel.neighbours)
-                affected_voxels.remove(voxel)
-                radius = radius - 1
+            radius = radius - 1
 
         return voxels_in_radius
 
