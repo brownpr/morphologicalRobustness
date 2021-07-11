@@ -45,7 +45,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | num_inputs           | Int     | Number of nodes in input layer of the ANN.                                                                    |
 | num_outputs          | Int     | Number of nodes in output layer of the ANN.                                                                   |
 | num_hidden_layers    | Int     | Number of nodes in the hidden layer of the ANN. Currently ANN only has one hidden layer.                      |
-| activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"t"` for tanh AF and `"s"` for sigmoid. Output layer of ANN uses by default a sigmoid AF. |
+| activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"tanh"` for tanh AF and `"sigmoid"` for sigmoid. Output layer of ANN uses by default a sigmoid AF. |
 | bounds               | List    | Upper and lower bounds for weights and biases, limitting them to this range.                                  |
 | noise                | Float   | Percentage of desired noise when 'evolving' ANN.                                                              |
 
@@ -62,21 +62,45 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | morph_between      | Int     | Voxel material number to be asigned to voxels that are between min_stiffness and max_stiffness.               |
 | actuator_stiffness | Int     | Stiffness to be assigned to actuators.                                                                        |
 | actuator_morph     | Int     | Voxel material number to be assigned to actuator voxel.                                                       |
+| unchangeable_morphs| List    | List of material numbers whos voxel properties should not change throughout the evaluation.                   |
 
 ***
 
 | mat_defaults       |Type     |Description                                                                                                    |
 | -------------------|---------|---------------------------------------------------------------------------------------------------------------|
 | number_of_materials| Int     | Number of different voxel materials, used top create each material.                                           |
+| mat_colour         | List    | Shape (1, number_of_materials) creature.vxa material voxel colours. Must be same length as desired number of materials.  |
 | integration        | List    | Shape (1, 2) creature.vxa integrator values. integaration[0] = Integrator and integration[1] = DtFrac.        |
 | damping            | List    | Shape (1, 3) creature.vxa damping values. damping[0] = BondDampingZ, damping[1] = ColDampingZ and damping[2] = SlowDampingZ |
 | collision          | List    | Shape (1, 3) creature.vxa collision values. collision[0] = SelfColEnabled. collision[1] = ColSystem and collision[2] = CollisionHorizon |
 | features           | List    | Shape (1,3) creature.vxa features values. features[0] = FluidDampEnabled, features[1] = PoissonKickBackEnabled and features[2] = EnforceLatticeEnabled.|
-| stopConditions     | List    | Shape (1, 3) creature.vxa stopConditions values. stopConditions[0] =  |
-                                                  |
+| stopConditions     | List    | Shape (1, 3) creature.vxa stopConditions values. stopConditions[0] = stopConditionType, stopConditions[1] = stopConditionValue and stopConditions[2] = InitCmTime.|
+| drawSmooth         | Int-bool| drawSmooth, 0 or 1.                                                                                           |
+| wrtie_fitness      | Int-bool| writeFitness, 0 or 1.                                                                                         |      
+| QhullTmpFile       | String  | Temp file name E.g. Qhull_temp0                                                                               |
+| CurvaturesTmpFile  | String  | Temp file name E.g. curve_temp0                                                                               |
+| numFixed           | Int     | numFixed                                                                                                      |
+| numForced          | Int     | numForced                                                                                                     |
+| gravity            | List    | Shape (1, 6) creature.vxa gravity values. gravity[0] = gravEnabled, gravity[1] = gravAcc, gravity[2] = floorEnabled, gravity[3] = sloped_floor, gravity[4] = floorEnabled and gravity[5] = bump_sep |
+| thermal            | List    | Shape (1, 5) creature.vxa thermal values. thermal[0] = tempEnabled, thermal[1] = tempAmp, thermal[2] = tempBase, thermal[3] = varyTempEnabled and thermal[4] = tempPeriod |
+| version            | Float   | version number                                                                                                |
+| lattice            | List    | Shape (1, 8) creature.vxa lattice values. lattice[0] = lattice_dim, lattice[1] = x_dim_adj, lattice[2] = y_dim_adj, lattice[3] = z_dim_adj, lattice[4] = x_line_offset, lattice[5] = y_line_offset, lattice[6] = x_layer_offset and lattice[7] = y_layer_offset |
+| voxel              | List     | Shape (1, 3) creature.vxa voxel values. voxel[0] = vox_name, voxel[1] = x_squeeze, voxel[2] = y_squeeze and voxel[3] = z_squeeze|
+| mat_type           | Int      | Material type                                                                                                |  
+| mechanical_properties  | List    | Shape (1, 13) creature.vxa mechanical_properties values. mechanical_properties[0] = mat_model, mechanical_properties[1] = elastic_mod, mechanical_properties[2] = plastic_mod, mechanical_properties[3] = yield_stress, mechanical_properties[4] = fail_model, mechanical_properties[5] = fail_stress, mechanical_properties[6] = fail_strain, mechanical_properties[7] = density, mechanical_properties[8] = poissons_ration, mechanical_properties[9] = CTE, mechanical_properties[10] = uStatic, mechanical_properties[11] = uDynamic and mechanical_properties[12] = isConductive |
+| compression_type   | String  | Compression type, e.g. ASCII_READABLE                                                                         |
+| phase_offset       | Float   | Phase offset magnitude, used to create phase offset array.                                                    |
+
+| phase_offset       | Float   | Phase offset magnitude, used to create phase offset array.                                                    |
+
+
+
+
+
                                                   
 
 # TODO
 
-- Update Readme
+- Update Readme (functions)
+- Recover parameter def from evosoro
 
