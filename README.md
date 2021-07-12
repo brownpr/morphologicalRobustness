@@ -26,7 +26,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 
 | Evosoro Path  |Type     |Description                                                                                                    |
 | ------------- |---------|---------------------------------------------------------------------------------------------------------------|
-| evosoro_path  | String  | Path to the `voxelyze` file. Used to run the vxa file of the created creature. Depending on inputs into the vxa file, creates files within the cwd                                which can ge used to evaluate the creatures fitness. E.g. `path/to/voxelize -f Example_1.vxa -p` |
+| evosoro_path  | String  | Path to the `voxelyze` file. Used to run the vxa file of the created creature. Depending on inputs into the vxa file, creates files within the cwd which can ge used to evaluate the creatures fitness. E.g. `path/to/voxelize -f Example_1.vxa -p` |
 
 ***
 
@@ -36,7 +36,8 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | ep_size       | Int     | Number of episodes. During each episode creature is evaluated and their morphology is changed using their ANN.|
 | top           | Int     | Number of top performing creatures to keep after each generation.                                             |
 | evolve        | Int     | Number of creatures to evolve their ANN.                                                                      |
-| gen_size      | Int     | Number of generations. After each generation the `top` performing creatures from the evaluation are kept (ANN unchanged) and the following `evolve`                               number of performing creatures have their ANN randomly changed. The following `pop_size - top - evolve` number of creatures are created to always add                             different creatures into the system.|
+| gen_size      | Int     | Number of generations. After each generation the `top` performing creatures from the evaluation are kept (ANN unchanged) and the following `evolve` number of performing creatures have their ANN randomly changed. The following `pop_size - top - evolve` number of creatures are created to always add different creatures into the system.|
+| stiff_delta_mult | Float   | Multiplier to stiffness delta, used to fine-tune stiffness change throughout episodes. |
 
 ***
 
