@@ -1,11 +1,12 @@
 {
       "evosoro_path": "./sculpting/voxelyze",
       "parameters": {
-            "pop_size": 1,
-            "ep_size": 1,
-            "gen_size": 1,
-            "top": 2,
-            "evolve": 1
+            "pop_size": 20,
+            "ep_size": 15,
+            "gen_size": 10,
+            "top": 6,
+            "evolve": 10,
+            "stiff_delta_mult": 30000
       },
       "nn_parameters": {
             "activation_function": "tanh",
