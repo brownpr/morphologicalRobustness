@@ -125,14 +125,15 @@ class Creature:
 
         if ("gen_" + str(self.generation)) not in self.evolution:
             self.evolution[("gen_" + str(self.generation))] = {}
-            # Update neural network parameters for said generation
-            self.evolution["gen_" + str(self.generation)].update(
-                {"nn_parameters": {key: str(value) for key, value in self.neural_net.parameters.items()}})
 
         if ("ep_" + str(self.episode)) not in self.evolution[("gen_" + str(self.generation))]:
             self.evolution["gen_" + str(self.generation)][("ep_" + str(self.episode))] = {}
 
-        # Update morphology for episode
+        # Update neural network parameters for current generation
+        self.evolution["gen_" + str(self.generation)].update(
+            {"nn_parameters": {key: str(value) for key, value in self.neural_net.parameters.items()}})
+
+        # Update morphology for current episode
         self.evolution[("gen_" + str(self.generation))][("ep_" + str(self.episode))]["morphology"] = \
             str(np.reshape(self.phenotype.morphology, (self.phenotype.structure[2], self.phenotype.structure[0]
                                                        * self.phenotype.structure[1])).tolist())
@@ -143,7 +144,7 @@ class Creature:
                 str(np.reshape(self.stiffness_array, (self.phenotype.structure[2], self.phenotype.structure[0]
                                                       * self.phenotype.structure[1])).tolist())
 
-        # Update fitness values in evolution
+        # Update fitness values for current episode
         self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"fitness_xyz": str(self.fitness_xyz)})
         self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"fitness_eval": self.fitness_eval})
         self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"average_forces": str(self.average_forces.tolist())})
@@ -245,7 +246,7 @@ class Creature:
         # Use NN to update the stiffness array of the creature
         vectorized_nn = np.vectorize(self.neural_net.forward_propagation)
         stiffness_delta, cache = vectorized_nn(ke_delta, displacement_delta)
-        stiffness_delta = np.multiply(stiffness_delta, 10000)
+        stiffness_delta = np.multiply(stiffness_delta, self.settings["parameters"]["stiff_delta_mult"])
 
         # Update stiffness of voxels
         new_stiffness_array = np.add(self.stiffness_array, stiffness_delta)
