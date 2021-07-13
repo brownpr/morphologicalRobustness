@@ -3,7 +3,7 @@ import json
 
 import numpy as np
 
-from evosoro import Evosoro
+from phenotype import Phenotype
 from voxel import Voxel
 from neural_network import NeuralNet
 
@@ -20,7 +20,7 @@ class Creature:
         settings_file.close()
 
         # create creature phenotype
-        self.phenotype = Evosoro()                                  # class, creature phenotype
+        self.phenotype = Phenotype()                                  # class, creature phenotype
 
         # Create dictionary of voxels                               # dict of classes, dictionary of creatures voxels
         self.voxels = {coords: Voxel(list(coords), mat_number) for coords, mat_number
@@ -60,6 +60,8 @@ class Creature:
         self.stiffness_array = np.zeros(self.phenotype.morphology.shape)  # np.array of stiffness at each voxel
         for index, voxel in self.voxels.items():
             self.stiffness_array[index[0]][index[1]][index[2]] = voxel.stiffness
+
+        self.initial_stiffness = self.stiffness_array               # Save initial stiffness
 
     def set_neural_network(self):
         self.neural_net = NeuralNet()
@@ -177,6 +179,11 @@ class Creature:
             if voxel.can_be_changed:
                 self.phenotype.morphology[index[0]][index[1]][index[2]] = voxel.material_number
 
+    def reset_morphology(self):
+        # reset morphology and stiffness to initial conditions
+        self.phenotype.morphology = self.phenotype.base_morphology
+        self.stiffness_array = self.initial_stiffness
+
     def update_neural_network(self, return_self=False):
         # Update neural network
         self.neural_net.update_neural_net()
@@ -218,7 +225,7 @@ class Creature:
         # Uses artificial neural network to update the creatures morphology and stiffness array.
 
         # Calculate displacement since last evaluation
-        displacement_delta = (self.fitness_eval - self.previous_fitness)/10
+        displacement_delta = self.fitness_eval - self.previous_fitness
 
         # Average forces
         average_forces = np.zeros((self.phenotype.structure[2], self.phenotype.structure[0], self.phenotype.structure[1]))
