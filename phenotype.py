@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 
-class Evosoro:
+class Phenotype:
     def __init__(self):
         # Import material defaults form settings file
         settings_file = open("settings.json")
