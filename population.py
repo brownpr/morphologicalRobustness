@@ -187,6 +187,10 @@ class Population:
                 shutil.move(kefp, cef)
                 shutil.move(sfp, cef)
 
+                # If at last episode, reset morphology and stiffness
+                if episode == self.settings["parameters"]["ep_size"] - 1:
+                    creature.reset_morphology()
+
     def new_population(self):
         # Function sorts previously evaluated population and selects top performers, evolves the neural network of a
         # a selected few and creates new creatures. These are joined into one dictionary for further evaluation
