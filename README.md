@@ -26,7 +26,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 
 | Evosoro Path  |Type     |Description                                                                                                    |
 | ------------- |---------|---------------------------------------------------------------------------------------------------------------|
-| evosoro_path  | String  | Path to the `voxelyze` file. Used to run the vxa file of the created creature. Depending on inputs into the vxa file, creates files within the cwd                                which can ge used to evaluate the creatures fitness. E.g. `path/to/voxelize -f Example_1.vxa -p` |
+| evosoro_path  | String  | Path to the `voxelyze` file. Used to run the vxa file of the created creature. Depending on inputs into the vxa file, creates files within the cwd which can ge used to evaluate the creatures fitness. E.g. `path/to/voxelize -f Example_1.vxa -p` |
 
 ***
 
@@ -36,7 +36,8 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | ep_size       | Int     | Number of episodes. During each episode creature is evaluated and their morphology is changed using their ANN.|
 | top           | Int     | Number of top performing creatures to keep after each generation.                                             |
 | evolve        | Int     | Number of creatures to evolve their ANN.                                                                      |
-| gen_size      | Int     | Number of generations. After each generation the `top` performing creatures from the evaluation are kept (ANN unchanged) and the following `evolve`                               number of performing creatures have their ANN randomly changed. The following `pop_size - top - evolve` number of creatures are created to always add                             different creatures into the system.|
+| gen_size      | Int     | Number of generations. After each generation the `top` performing creatures from the evaluation are kept (ANN unchanged) and the following `evolve` number of performing creatures have their ANN randomly changed. The following `pop_size - top - evolve` number of creatures are created to always add different creatures into the system.|
+| stiff_delta_mult | Float   | Multiplier to stiffness delta, used to fine-tune stiffness change throughout episodes. |
 
 ***
 
@@ -70,25 +71,25 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | -------------------|---------|---------------------------------------------------------------------------------------------------------------|
 | number_of_materials| Int     | Number of different voxel materials, used top create each material.                                           |
 | mat_colour         | List    | Shape (1, number_of_materials) creature.vxa material voxel colours. Must be same length as desired number of materials.  |
-| integration        | List    | Shape (1, 2) creature.vxa integrator values. integaration[0] = Integrator and integration[1] = DtFrac.        |
-| damping            | List    | Shape (1, 3) creature.vxa damping values. damping[0] = BondDampingZ, damping[1] = ColDampingZ and damping[2] = SlowDampingZ |
-| collision          | List    | Shape (1, 3) creature.vxa collision values. collision[0] = SelfColEnabled. collision[1] = ColSystem and collision[2] = CollisionHorizon |
-| features           | List    | Shape (1,3) creature.vxa features values. features[0] = FluidDampEnabled, features[1] = PoissonKickBackEnabled and features[2] = EnforceLatticeEnabled.|
-| stopConditions     | List    | Shape (1, 3) creature.vxa stopConditions values. stopConditions[0] = stopConditionType, stopConditions[1] = stopConditionValue and stopConditions[2] = InitCmTime.|
-| drawSmooth         | Int-bool| drawSmooth, 0 or 1.                                                                                           |
-| wrtie_fitness      | Int-bool| writeFitness, 0 or 1.                                                                                         |      
-| QhullTmpFile       | String  | Temp file name E.g. Qhull_temp0                                                                               |
-| CurvaturesTmpFile  | String  | Temp file name E.g. curve_temp0                                                                               |
-| numFixed           | Int     | numFixed                                                                                                      |
-| numForced          | Int     | numForced                                                                                                     |
-| gravity            | List    | Shape (1, 6) creature.vxa gravity values. gravity[0] = gravEnabled, gravity[1] = gravAcc, gravity[2] = floorEnabled, gravity[3] = sloped_floor, gravity[4] = floorEnabled and gravity[5] = bump_sep |
-| thermal            | List    | Shape (1, 5) creature.vxa thermal values. thermal[0] = tempEnabled, thermal[1] = tempAmp, thermal[2] = tempBase, thermal[3] = varyTempEnabled and thermal[4] = tempPeriod |
+| integration        | List    | Shape (1, 2) creature.vxa integrator values. `Integrator` and `DtFrac`.        |
+| damping            | List    | Shape (1, 3) creature.vxa damping values. `BondDampingZ`, `ColDampingZ` and `SlowDampingZ` |
+| collision          | List    | Shape (1, 3) creature.vxa collision values. `SelfColEnabled`, `ColSystem` and `CollisionHorizon` |
+| features           | List    | Shape (1,3) creature.vxa features values. `FluidDampEnabled`, `PoissonKickBackEnabled` and `EnforceLatticeEnabled`.|
+| stopConditions     | List    | Shape (1, 3) creature.vxa `stopConditions` values. `stopConditionType`, `stopConditionValue` and `InitCmTime`.|
+| drawSmooth         | Int-bool| `drawSmooth`, 0 or 1.                                                                                           |
+| wrtie_fitness      | Int-bool| `writeFitness`, 0 or 1.                                                                                         |      
+| QhullTmpFile       | String  | Temp file name E.g. `Qhull_temp0`                                                                               |
+| CurvaturesTmpFile  | String  | Temp file name E.g. `curve_temp0`                                                                               |
+| numFixed           | Int     | `numFixed`                                                                                                      |
+| numForced          | Int     | `numForced`                                                                                                     |
+| gravity            | List    | Shape (1, 6) creature.vxa gravity values. `gravEnabled`, `gravAcc`, `floorEnabled`, `sloped_floor`, `floorEnabled` and `bump_sep` |
+| thermal            | List    | Shape (1, 5) creature.vxa thermal values. `tempEnabled`, `tempAmp`, `tempBase`, `varyTempEnabled` and `tempPeriod` |
 | version            | Float   | version number                                                                                                |
-| lattice            | List    | Shape (1, 8) creature.vxa lattice values. lattice[0] = lattice_dim, lattice[1] = x_dim_adj, lattice[2] = y_dim_adj, lattice[3] = z_dim_adj, lattice[4] = x_line_offset, lattice[5] = y_line_offset, lattice[6] = x_layer_offset and lattice[7] = y_layer_offset |
-| voxel              | List     | Shape (1, 3) creature.vxa voxel values. voxel[0] = vox_name, voxel[1] = x_squeeze, voxel[2] = y_squeeze and voxel[3] = z_squeeze|
+| lattice            | List    | Shape (1, 8) creature.vxa lattice values. `lattice_dim`, `x_dim_adj`, `y_dim_adj`, `z_dim_adj`, `x_line_offset`, `y_line_offset`, `x_layer_offset` and `y_layer_offset` |
+| voxel              | List     | Shape (1, 3) creature.vxa voxel values. `vox_name`, `x_squeeze`, `y_squeeze` and `z_squeeze`|
 | mat_type           | Int      | Material type                                                                                                |  
-| mechanical_properties  | List    | Shape (1, 13) creature.vxa mechanical_properties values. mechanical_properties[0] = mat_model, mechanical_properties[1] = elastic_mod, mechanical_properties[2] = plastic_mod, mechanical_properties[3] = yield_stress, mechanical_properties[4] = fail_model, mechanical_properties[5] = fail_stress, mechanical_properties[6] = fail_strain, mechanical_properties[7] = density, mechanical_properties[8] = poissons_ration, mechanical_properties[9] = CTE, mechanical_properties[10] = uStatic, mechanical_properties[11] = uDynamic and mechanical_properties[12] = isConductive |
-| compression_type   | String  | Compression type, e.g. ASCII_READABLE                                                                         |
+| mechanical_properties  | List    | Shape (1, 13) creature.vxa mechanical_properties values. `mat_model`, `elastic_mod`, `plastic_mod`, `yield_stress`, `fail_model`, `fail_stress`, `fail_strain`, `density`, `poissons_ration`, `CTE`, `uStatic`, `uDynamic` and `isConductive` |
+| compression_type   | String  | Compression type, e.g. `"ASCII_READABLE"`                                                                         |
 | phase_offset       | Float   | Phase offset magnitude, used to create phase offset array.                                                    |
 
 | phase_offset       | Float   | Phase offset magnitude, used to create phase offset array.                                                    |
