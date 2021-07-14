@@ -61,7 +61,7 @@ class Creature:
         for index, voxel in self.voxels.items():
             self.stiffness_array[index[0]][index[1]][index[2]] = voxel.stiffness
 
-        self.initial_stiffness = self.stiffness_array               # Save initial stiffness
+        self.initial_stiffness = self.stiffness_array.copy()               # Save initial stiffness
 
     def set_neural_network(self):
         self.neural_net = NeuralNet()
@@ -181,8 +181,7 @@ class Creature:
 
     def reset_morphology(self):
         # reset morphology and stiffness to initial conditions
-        self.phenotype.morphology = self.phenotype.base_morphology
-        self.stiffness_array = self.initial_stiffness
+        self.update_morphology(self.initial_stiffness)
 
     def update_neural_network(self, return_self=False):
         # Update neural network
