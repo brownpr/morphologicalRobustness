@@ -1,3 +1,5 @@
+import datetime
+
 from population import Population
 import os
 
@@ -59,7 +61,7 @@ if __name__ == "__main__":
         # Save population
         damaged_population.save_population()
 
-        print("HelloWorld")
+        print(datetime.datetime.now() + "-----FINISHED EVALUATION-----")
 
     except KeyboardInterrupt:
         exit()
