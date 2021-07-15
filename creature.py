@@ -309,13 +309,13 @@ class Creature:
         # wait for fitness and pressure file existence
         gfd = os.path.join(cwd, "generated_files")  # Generated files directory
         ffp = os.path.join(cwd, self.fitness_file_name)  # fitness file path
-        pf = os.path.join(cwd, self.pressures_file_name)  # pressure file path
+        pfp = os.path.join(cwd, self.pressures_file_name)  # pressure file path
         kefp = os.path.join(cwd, self.ke_file_name)  # ke file path
         sfp = os.path.join(cwd, self.strain_file_name)  # strain file path
 
         # wait for file to appear, if two minutes passes and there is no file raise exception
         t = time.time()
-        while not os.path.exists(pf) or not os.path.exists(ffp):
+        while not os.path.exists(pfp) or not os.path.exists(ffp):
             time.sleep(1)
             toc = time.time() - t
             if toc > 120:
@@ -351,9 +351,15 @@ class Creature:
         # Move created creature files to corresponding episode folder
         shutil.move(vxa_file_path, cef)
         shutil.move(ffp, cef)
-        shutil.move(pf, cef)
-        shutil.move(kefp, cef)
-        shutil.move(sfp, cef)
+        # Keep or delete pressure, kinetic energy and strain files
+        if self.settings["parameters"]["keep_files"]:
+            shutil.move(pfp, cef)
+            shutil.move(kefp, cef)
+            shutil.move(sfp, cef)
+        else:
+            os.remove(pfp)
+            os.remove(kefp)
+            os.remove(sfp)
 
         # If at last episode, reset morphology and stiffness
         if episode == self.settings["parameters"]["ep_size"] - 1:
