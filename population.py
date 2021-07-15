@@ -40,8 +40,8 @@ class Population:
             for creature in self.population.values():
                 creature.evolution = {}
 
-        # Set full population
-        self.full_population = self.population          # Full population is initial population
+        # Full population is initial population
+        self.full_population = self.population                      # dall creatures created in population
 
     def create_new_population(self, population_range):
         # ARGUMENTS:
@@ -115,81 +115,17 @@ class Population:
 
     def evaluate_population(self, generation_number):
         # ARGUMENTS
-        # - generation_num:        int, Current generation
-        # - population:     dict, creatures to evaluate
-        # - episode_size:   int, Number of episodes used to evaluate creatures
+        # - generation_num:                                             int, Current generation number
 
         # Working directories variables
         cwd = os.getcwd()
-        gfd = os.path.join(os.getcwd(), "generated_files")  # Generated files directory
 
         # Start simulations, after each simulation robot undergoes morphological change
         for episode in range(self.settings["parameters"]["ep_size"]):
             for creature in self.population.values():
 
-                # Create VXA file for creature
-                creature.update_vxa(generation_number, episode)
-
-                # Get file path variables and save vxa
-                vxa_fp = os.path.join(cwd, creature.current_file_name + ".vxa")
-                new_file = open(vxa_fp, "w")
-                new_file.write(creature.phenotype.vxa_file)
-                new_file.close()
-
-                # launch simulation
-                sub.Popen(self.settings["evosoro_path"] + " -f  " + creature.current_file_name + ".vxa", shell=True)
-
-                # wait for fitness and pressure file existence
-                ffp = os.path.join(cwd, creature.fitness_file_name)  # fitness file path
-                pf = os.path.join(cwd, creature.pressures_file_name)  # pressure file path
-                kefp = os.path.join(cwd, creature.ke_file_name)  # ke file path
-                sfp = os.path.join(cwd, creature.strain_file_name)  # strain file path
-
-                # wait for file to appear, if two minutes passes and there is no file raise exception
-                t = time.time()
-                while not os.path.exists(pf) or not os.path.exists(ffp):
-                    time.sleep(1)
-                    toc = time.time() - t
-                    if toc > 120:
-                        raise Exception("ERROR: No pressure file or fitness file found after 120 seconds. "
-                                        "This error is commonly due to errors in the written vxa file.")
-
-                # Update creature fitness
-                creature.calculate_fitness()
-
-                # occasionally an error occurs and results return 0, if so, re-run for up to 60s
-                t = time.time()
-                toc = 0
-                while creature.fitness_eval == 0 and toc < 60:
-                    creature.calculate_fitness()
-                    toc = time.time() - t
-
-                # Update creature stiffness, uses ANN
-                creature.calculate_stiffness()
-
-                # Create new folders and move files
-                ccf = os.path.join(gfd, creature.name)  # current creature folder
-                if not os.path.exists(ccf):
-                    os.mkdir(ccf)
-
-                cgf = os.path.join(ccf, "gen_" + str(generation_number))  # current generation folder
-                if not os.path.exists(cgf):
-                    os.mkdir(cgf)
-
-                cef = os.path.join(cgf, "ep_" + str(episode))  # current episode folder
-                if not os.path.exists(cef):
-                    os.mkdir(cef)
-
-                # Move created creature files to corresponding episode folder
-                shutil.move(vxa_fp, cef)
-                shutil.move(ffp, cef)
-                shutil.move(pf, cef)
-                shutil.move(kefp, cef)
-                shutil.move(sfp, cef)
-
-                # If at last episode, reset morphology and stiffness
-                if episode == self.settings["parameters"]["ep_size"] - 1:
-                    creature.reset_morphology()
+                # evaluate each creature
+                creature.evaluate(generation_number, episode, cwd)
 
     def new_population(self):
         # Function sorts previously evaluated population and selects top performers, evolves the neural network of a

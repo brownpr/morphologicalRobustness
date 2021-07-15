@@ -1,5 +1,9 @@
 import csv
 import json
+import os
+import subprocess as sub
+import time
+import shutil
 
 import numpy as np
 
@@ -179,10 +183,6 @@ class Creature:
             if voxel.can_be_changed:
                 self.phenotype.morphology[index[0]][index[1]][index[2]] = voxel.material_number
 
-    def reset_morphology(self):
-        # reset morphology and stiffness to initial conditions
-        self.update_morphology(self.initial_stiffness)
-
     def update_neural_network(self, return_self=False):
         # Update neural network
         self.neural_net.update_neural_net()
@@ -287,6 +287,77 @@ class Creature:
             radius = radius - 1
 
         return voxels_in_radius
+
+    def reset_morphology(self):
+        # reset morphology and stiffness to initial conditions
+        self.update_morphology(self.initial_stiffness)
+
+    def evaluate(self, generation_number, episode, cwd):
+        # Create VXA file for creature
+        self.update_vxa(generation_number, episode)
+
+        # Get file path variables and save vxa
+        # Get file path
+        vxa_file_path = os.path.join(cwd, self.current_file_name + ".vxa")
+        new_file = open(vxa_file_path, "w")
+        new_file.write(self.phenotype.vxa_file)
+        new_file.close()
+
+        # launch simulation
+        sub.Popen(self.settings["evosoro_path"] + " -f  " + self.current_file_name + ".vxa", shell=True)
+
+        # wait for fitness and pressure file existence
+        gfd = os.path.join(cwd, "generated_files")  # Generated files directory
+        ffp = os.path.join(cwd, self.fitness_file_name)  # fitness file path
+        pf = os.path.join(cwd, self.pressures_file_name)  # pressure file path
+        kefp = os.path.join(cwd, self.ke_file_name)  # ke file path
+        sfp = os.path.join(cwd, self.strain_file_name)  # strain file path
+
+        # wait for file to appear, if two minutes passes and there is no file raise exception
+        t = time.time()
+        while not os.path.exists(pf) or not os.path.exists(ffp):
+            time.sleep(1)
+            toc = time.time() - t
+            if toc > 120:
+                raise Exception("ERROR: No pressure file or fitness file found after 120 seconds. "
+                                "This error is commonly due to errors in the written vxa file.")
+
+        # Update creature fitness
+        self.calculate_fitness()
+
+        # occasionally an error occurs and results return 0, if so, re-run for up to 60s
+        t = time.time()
+        toc = 0
+        while self.fitness_eval == 0 and toc < 60:
+            self.calculate_fitness()
+            toc = time.time() - t
+
+        # Update creature stiffness, uses ANN
+        self.calculate_stiffness()
+
+        # Create new folders and move files
+        ccf = os.path.join(gfd, self.name)  # current creature folder
+        if not os.path.exists(ccf):
+            os.mkdir(ccf)
+
+        cgf = os.path.join(ccf, "gen_" + str(generation_number))  # current generation folder
+        if not os.path.exists(cgf):
+            os.mkdir(cgf)
+
+        cef = os.path.join(cgf, "ep_" + str(episode))  # current episode folder
+        if not os.path.exists(cef):
+            os.mkdir(cef)
+
+        # Move created creature files to corresponding episode folder
+        shutil.move(vxa_file_path, cef)
+        shutil.move(ffp, cef)
+        shutil.move(pf, cef)
+        shutil.move(kefp, cef)
+        shutil.move(sfp, cef)
+
+        # If at last episode, reset morphology and stiffness
+        if episode == self.settings["parameters"]["ep_size"] - 1:
+            self.reset_morphology()
 
     def remove_voxels_sections(self, sections):
         if isinstance(sections, tuple):
