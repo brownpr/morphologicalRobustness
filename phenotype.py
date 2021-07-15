@@ -52,7 +52,7 @@ class Phenotype:
         self.mechanical_properties = self.settings["mat_defaults"]["mechanical_properties"]
         self.compression_type = self.settings["mat_defaults"]["compression_type"]
         self.phase_offset = self.settings["mat_defaults"]["phase_offset"]
-        self.stiffness_array = self.settings["mat_defaults"]["stiffness_array"]
+        self.stiffness_array = None
         self.gen_algorithm = None
 
     def update_vxa_file(self, creature, number_of_materials=None, integration=None, damping=None, collision=None,
@@ -408,22 +408,25 @@ class Phenotype:
 
         phase_offset_text = pre_text + "\n" + offset_text + "\n" + post_text
 
-        stiff_array = []
-        for row in self.stiffness_array:
-            temp_text = ",".join([str(elem) for elem in row])
-            stiff_array.append(temp_text)
+        if stiffness_array is not None:
+            stiff_array = []
+            for row in self.stiffness_array:
+                temp_text = ",".join([str(elem) for elem in row])
+                stiff_array.append(temp_text)
 
-        pre_text = '''        <Stiffness>
-        <MinElasticMod>10000.0</MinElasticMod>
-        <MaxElasticMod>1000000</MaxElasticMod>'''
+            pre_text = '''        <Stiffness>
+            <MinElasticMod>10000.0</MinElasticMod>
+            <MaxElasticMod>1000000</MaxElasticMod>'''
 
-        offset_text = "\n".join(['''        <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in stiff_array])
-        post_text = '''        </Stiffness>'''
-        stiffness_text = pre_text + "\n" + offset_text + "\n" + post_text
+            offset_text = "\n".join(['''        <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in stiff_array])
+            post_text = '''        </Stiffness>'''
+            stiffness_text = pre_text + "\n" + offset_text + "\n" + post_text
 
-        end_text = '''
-        </Structure>
-        </VXC>
-        </VXA>'''
+            end_text = '''
+            </Structure>
+            </VXC>
+            </VXA>'''
+        else:
+            stiffness_array = ""
 
         self.vxa_file = init_text + voxel_text + structure_text + phase_offset_text + stiffness_text + end_text
