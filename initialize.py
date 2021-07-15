@@ -1,6 +1,6 @@
 import datetime
 
-from population import Population
+from population_async import Population
 import os
 
 if __name__ == "__main__":
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         # Save population
         damaged_population.save_population()
 
-        print(datetime.datetime.now() + "-----FINISHED EVALUATION-----")
+        print(str(datetime.datetime.now()) + "-----FINISHED EVALUATION-----")
 
     except KeyboardInterrupt:
         exit()
