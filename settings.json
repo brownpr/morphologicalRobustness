@@ -3,10 +3,11 @@
       "parameters": {
             "pop_size": 20,
             "ep_size": 15,
-            "gen_size": 10,
-            "top": 6,
-            "evolve": 10,
-            "stiff_delta_mult": 30000
+            "gen_size": 15,
+            "top": 3,
+            "evolve": 12,
+            "stiff_delta_mult": 30000,
+            "keep_files": 0
       },
       "nn_parameters": {
             "activation_function": "tanh",
@@ -14,7 +15,8 @@
             "num_outputs": 1,
             "num_hidden_layers": 16,
             "bounds": [-1.5, 1.5],
-            "noise": 0.005 
+            "parameter_change": 0.05,
+            "noise": 0.000
       },
       "structure": {
             "creature_structure": [6, 6, 6],
@@ -51,7 +53,6 @@
             "mat_colour": ["0,0,1,1", "0,1,0,1", "1,0,0,1", "1,1,0,1", "0,1,1,1", "1,1,1,1", "0,0,0,1"],
             "mechanical_properties": [0, 1e+007, 0, 0, 0, 0, 0, 1e+006, 0.35, 0.00, 1, 0.5, 1],
             "compression_type": "ASCII_READABLE",
-            "phase_offset": 0.1,
-            "stiffness_array": null
+            "phase_offset": 0.1
             }
 }
