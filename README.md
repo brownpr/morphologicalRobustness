@@ -23,7 +23,7 @@ While in the working directory run `python initialize.py`.
 A folder called `generated_files` was created during the simulation. Within these you will see all the saved data for this simulation. 
 
 # Settings.json
-Sttings file, most variables have been placed into this settings folder.
+Settings file, most variables have been placed into this settings folder for ease of access and adaptability.
 
 Within the Creature class you will see the initial creatures morphology, this array is of shape (z, x*y) where (x, y, z) are the creatures structure. If you change the length of the creatures base morphology you MUST update the `"creature_structure"` parameter within the settings file. 
 
