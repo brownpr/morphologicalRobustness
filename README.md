@@ -110,5 +110,6 @@ With the settings file open you can edit any of the parameters you wish. If you 
 # TODO
 
 - Update Readme (functions)
+- Update code comments 
 - Recover parameter def from evosoro
 
