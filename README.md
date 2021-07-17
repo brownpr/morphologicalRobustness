@@ -3,6 +3,11 @@ Genetic Algorithm to evaluate the fitness of a creature walking on a flat plane.
 
 This simulations are run using evosoro. Evosoro is a Python soft robot simulation library based on the Voxelyze physics engine. It provides a high-level interface for the dynamic simulation and automated design of soft multimaterial robots. Evosoro was designed and developed by the Morphology, Evolution & Cognition Laboratory, University of Vermont. The library is built on top of the open source VoxCAD and the underlying voxel physics engine (Voxelyze) which were both developed by the Creative Machines Lab, Columbia University.
 
+# Requirements
+- python2.7
+- numpy
+- matplotlib
+- evosoro
 
 # How to run
 Download and install Evosoro.
@@ -11,14 +16,14 @@ Please see https://github.com/skriegman/evosoro for further details on how to in
 
 IMPORTANT: Within the `settings.json` file, ensure the `"evosoro_path"` root is correct.
 
-While in the working directory run `python initialize.py`
+While in the working directory run `python initialize.py`.
 
 # Retrieving Results
 
 A folder called `generated_files` was created during the simulation. Within these you will see all the saved data for this simulation. 
 
 # Settings.json
-Sttings file, most variables have been placed into this settings folder.
+Settings file, most variables have been placed into this settings folder for ease of access and adaptability.
 
 Within the Creature class you will see the initial creatures morphology, this array is of shape (z, x*y) where (x, y, z) are the creatures structure. If you change the length of the creatures base morphology you MUST update the `"creature_structure"` parameter within the settings file. 
 
@@ -38,6 +43,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | evolve        | Int     | Number of creatures to evolve their ANN.                                                                      |
 | gen_size      | Int     | Number of generations. After each generation the `top` performing creatures from the evaluation are kept (ANN unchanged) and the following `evolve` number of performing creatures have their ANN randomly changed. The following `pop_size - top - evolve` number of creatures are created to always add different creatures into the system.|
 | stiff_delta_mult | Float   | Multiplier to stiffness delta, used to fine-tune stiffness change throughout episodes. |
+| keep_files | bool   | Keep larger files? Files are: Pressure, Kinetic Energy and Strain CSV files. |
 
 ***
 
@@ -48,6 +54,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
 | num_hidden_layers    | Int     | Number of nodes in the hidden layer of the ANN. Currently ANN only has one hidden layer.                      |
 | activation_function  | String  | Activation function to be used within hidden layers of the ANN. `"tanh"` for tanh AF and `"sigmoid"` for sigmoid. Output layer of ANN uses by default a sigmoid AF. |
 | bounds               | List    | Upper and lower bounds for weights and biases, limitting them to this range.                                  |
+| parameter_change | Float   | Percentage of desired ANN parameter (weights, biases) change desired if creature is chosen to evolve. |
 | noise                | Float   | Percentage of desired noise when 'evolving' ANN.                                                              |
 
 ***
@@ -103,5 +110,6 @@ With the settings file open you can edit any of the parameters you wish. If you 
 # TODO
 
 - Update Readme (functions)
+- Update code comments 
 - Recover parameter def from evosoro
 
