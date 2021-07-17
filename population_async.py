@@ -1,6 +1,8 @@
 import json
 import os
 import datetime as dt
+import time
+import shutil
 import operator
 import multiprocessing
 from copy import deepcopy
@@ -126,12 +128,89 @@ class Population:
             processes = []
             # launch subprocesses in asynchronously
             for creature in self.population.values():
-                process = multiprocessing.Process(target=creature.evaluate, args=[generation_number, episode, cwd])
+                # Create VXA file for creature
+                creature.update_vxa(generation_number, episode)
+
+                # Get file path
+                vxa_file_path = os.path.join(cwd, creature.current_file_name + ".vxa")
+
+                # Get file path variables and save vxa
+                new_file = open(vxa_file_path, "w")
+                new_file.write(creature.phenotype.vxa_file)
+                new_file.close()
+
+                # Start multiprocessing
+                process = multiprocessing.Process(target=creature.evaluate)
                 process.start()
                 processes.append(process)
 
             for process in processes:
                 process.join()
+
+            # When simulations have finished, calculate fitness
+            for creature in self.population.values():
+                # Get vxa file path
+                vxa_file_path = os.path.join(cwd, creature.current_file_name + ".vxa")
+
+                # Common file names
+                gfd = os.path.join(cwd, "generated_files")                  # Generated files directory
+                ffp = os.path.join(cwd, creature.fitness_file_name)         # fitness file path
+                pfp = os.path.join(cwd, creature.pressures_file_name)       # pressure file path
+                kefp = os.path.join(cwd, creature.ke_file_name)             # ke file path
+                sfp = os.path.join(cwd, creature.strain_file_name)          # strain file path
+
+                # wait for file to appear, if two minutes passes and there is no file raise exception
+                t = time.time()
+                while not os.path.exists(pfp) or not os.path.exists(ffp):
+                    time.sleep(1)
+                    toc = time.time() - t
+                    if toc > 240:
+                        raise Exception("ERROR: No pressure file or fitness file for " + creature.name +
+                                        "found after 120 seconds. This error is commonly due to problems in the created"
+                                        " vxa file.")
+
+                # Update creature fitness
+                creature.calculate_fitness()
+
+                # occasionally an error occurs and results return 0, if so, re-run for up to 60s
+                t = time.time()
+                toc = 0
+                while creature.fitness_eval == 0 and toc < 120:
+                    creature.calculate_fitness()
+                    toc = time.time() - t
+
+                # Update creature stiffness, uses ANN
+                creature.calculate_stiffness()
+
+                # Create new folders and move files
+                ccf = os.path.join(gfd, creature.name)  # current creature folder
+                if not os.path.exists(ccf):
+                    os.mkdir(ccf)
+
+                cgf = os.path.join(ccf, "gen_" + str(generation_number))  # current generation folder
+                if not os.path.exists(cgf):
+                    os.mkdir(cgf)
+
+                cef = os.path.join(cgf, "ep_" + str(episode))  # current episode folder
+                if not os.path.exists(cef):
+                    os.mkdir(cef)
+
+                # Move created creature files to corresponding episode folder
+                shutil.move(vxa_file_path, cef)
+                shutil.move(ffp, cef)
+                # Keep or delete pressure, kinetic energy and strain files
+                if self.settings["parameters"]["keep_files"]:
+                    shutil.move(pfp, cef)
+                    shutil.move(kefp, cef)
+                    shutil.move(sfp, cef)
+                else:
+                    os.remove(pfp)
+                    os.remove(kefp)
+                    os.remove(sfp)
+
+                # If at last episode, reset morphology and stiffness
+                if episode == self.settings["parameters"]["ep_size"] - 1:
+                    creature.reset_morphology()
 
     def new_population(self):
         # Function sorts previously evaluated population and selects top performers, evolves the neural network of a
