@@ -24,10 +24,10 @@ class Voxel:
 
     def update_with_stiffness(self, new_stiffness):
         if self.can_be_changed:
-            if new_stiffness > self.settings["structure"]["max_stiffness"]:
+            if new_stiffness >= self.settings["structure"]["max_stiffness"]:
                 self.stiffness = self.settings["structure"]["max_stiffness"]
                 self.material_number = self.settings["structure"]["morph_max"]
-            elif new_stiffness < self.settings["structure"]["min_stiffness"]:
+            elif new_stiffness <= self.settings["structure"]["min_stiffness"]:
                 self.stiffness = self.settings["structure"]["min_stiffness"]
                 self.material_number = self.settings["structure"]["morph_min"]
             else:
@@ -36,5 +36,4 @@ class Voxel:
 
     def remove(self):
         if self.can_be_changed:
-            self.material_number = 0
-            self.stiffness = self.settings["structure"]["min_stiffness"]
+            self.update_with_stiffness(self.settings["structure"]["min_stiffness"])
