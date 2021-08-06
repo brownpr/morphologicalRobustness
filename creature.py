@@ -24,7 +24,7 @@ class Creature:
         self.phenotype = Phenotype()                                  # class, creature phenotype
 
         # Create dictionary of voxels                               # dict of classes, dictionary of creatures voxels
-        self.voxels = {coords: Voxel(list(coords), mat_number) for coords, mat_number
+        self.voxels = {str(coords): Voxel(list(coords), mat_number) for coords, mat_number
                        in dict(np.ndenumerate(self.phenotype.morphology)).items()}
 
         # Basic creature information
@@ -59,7 +59,8 @@ class Creature:
 
         # Create stiffness array and update it
         self.stiffness_array = np.zeros(self.phenotype.morphology.shape)  # np.array of stiffness at each voxel
-        for index, voxel in self.voxels.items():
+        for voxel in self.voxels.values():
+            index = voxel.coordinates
             self.stiffness_array[index[0]][index[1]][index[2]] = voxel.stiffness
 
         self.initial_stiffness = self.stiffness_array.copy()               # Save initial stiffness
@@ -84,8 +85,8 @@ class Creature:
                     section_counter += 1
 
         # Iterate thorough voxels and add their neighbours and the section they belong to
-        for index, voxel in self.voxels.items():
-            z, y, x = index
+        for voxel in self.voxels.values():
+            z, y, x = voxel.coordinates
             # Get list of possible neighbours and find which voxels are within this range
             neighbours_list = [[z, y, x - 1], [z, y, x + 1], [z, y - 1, x], [z, y + 1, x], [z - 1, y, x], [z + 1, y, x]]
             for neighbour in self.voxels.values():
@@ -160,7 +161,8 @@ class Creature:
         # Update creatures voxel stiffness and morphology and update creatures stiffness_array,
         # if none is given this part is skipped
         if new_stiffness_array is not None:
-            for index, voxel in self.voxels.items():
+            for voxel in self.voxels.values():
+                index = voxel.coordinates
                 voxel.update_with_stiffness(new_stiffness_array[index[0]][index[1]][index[2]])
 
         # remove isolated voxels
@@ -174,7 +176,8 @@ class Creature:
                     voxel.remove()
 
         # Update creatures morphology
-        for index, voxel in self.voxels.items():
+        for voxel in self.voxels.values():
+            index = voxel.coordinates
             # Although not needed (as no change will have occurred) this will save iterations
             if voxel.can_be_changed:
                 self.phenotype.morphology[index[0]][index[1]][index[2]] = voxel.material_number
@@ -258,8 +261,8 @@ class Creature:
         self.update_morphology(new_stiffness_array)
 
     def find_voxel_by_coordinates(self, coordinates):
-        for index, voxel in self.voxels.items():
-            if coordinates == index:
+        for voxel in self.voxels.values():
+            if coordinates == voxel.coordinates:
                 return voxel
 
         raise Exception("ERROR: Voxel not found, please ensure given coordinates are formatted correctly.")
