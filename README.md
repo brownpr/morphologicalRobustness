@@ -110,5 +110,5 @@ With the settings file open you can edit any of the parameters you wish. If you 
 # TODO
 - Create code paperwork
 - Update code comments 
-- Initial creature creator
+- Add initial creature creator (function)
 
