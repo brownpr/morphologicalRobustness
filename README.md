@@ -108,8 +108,7 @@ With the settings file open you can edit any of the parameters you wish. If you 
                                                   
 
 # TODO
-
-- Update Readme (functions)
+- Create code paperwork
 - Update code comments 
-- Recover parameter def from evosoro
+- Initial creature creator
 
