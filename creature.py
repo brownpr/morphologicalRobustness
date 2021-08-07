@@ -1,6 +1,8 @@
 import csv
 import json
 import subprocess as sub
+import re
+import time
 
 import numpy as np
 
@@ -200,22 +202,30 @@ class Creature:
         # Update old fitness with current fitness
         self.previous_fitness = self.fitness_eval
 
-        # Open file and retrieve fitness values
-        tag_y = "<normDistY>"
-        tag_x = "<normDistX>"
-        tag_z = "<normDistZ>"
-        with open(self.fitness_file_name) as fit_file:
-            for line in fit_file:
-                if tag_y in line:
-                    result_Y = abs(float(line.replace(tag_y, "").replace("</" + tag_y[1:], "")))
-                if tag_x in line:
-                    result_X = float(line.replace(tag_x, "").replace("</" + tag_x[1:], ""))
-                if tag_z in line:
-                    result_Z = abs(float(line.replace(tag_z, "").replace("</" + tag_z[1:], "")))
-        fit_file.close()
+        tag_x = "<normDistX>(.*)</normDistX>"
+        tag_y = "<normDistY>(.*)</normDistY>"
+        tag_z = "<normDistZ>(.*)</normDistZ>"
+
+        with open(self.fitness_file_name, "r") as fitness_file:
+            read_file = fitness_file.read()
+            tic = time.time()
+            while True:
+                x_match = re.search(tag_x, read_file)
+                y_match = re.search(tag_y, read_file)
+                z_match = re.search(tag_z, read_file)
+                if x_match and y_match and z_match:
+                    result_x = float(x_match.group(1))
+                    result_y = float(y_match.group(1))
+                    result_z = float(z_match.group(1))
+                    break
+                toc = time.time() - tic
+                if toc > 120:
+                    raise Exception("Error while importing data from fitness evaluation. Fitness file name: "
+                                    + self.fitness_file_name)
+        fitness_file.close()
 
         # Save fitness values
-        self.fitness_xyz = [result_X, result_Y, result_Z]
+        self.fitness_xyz = [result_x, result_y, result_z]
 
         # Calculate fitness, punish for locomotion that is not in a straight line
         self.fitness_eval = self.fitness_xyz[0] - self.fitness_xyz[1] * mod
