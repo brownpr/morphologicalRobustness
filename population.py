@@ -186,7 +186,7 @@ class Population:
 
                 # wait for file to appear, if two minutes passes and there is no file raise exception
                 t = time.time()
-                while not os.path.exists(pfp) or not os.path.exists(ffp):
+                while (not os.path.exists(pfp)) or (not os.path.exists(ffp)):
                     time.sleep(1)
                     toc = time.time() - t
                     if toc > 300:
