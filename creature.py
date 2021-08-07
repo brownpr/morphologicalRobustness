@@ -73,8 +73,8 @@ class Creature:
     def set_neighbours_and_sections(self):
         # Get region areas
         x_sections, y_sections, z_sections = self.settings["structure"]["sections"]
-        range_x_section, range_y_sections, range_z_sections = np.divide(self.settings["structure"]["creature_structure"],
-                                                                        self.settings["structure"]["sections"])
+        range_x_section, range_y_sections, range_z_sections \
+            = np.divide(self.settings["structure"]["creature_structure"], self.settings["structure"]["sections"])
         section_counter = 0
         section_range_dictionary = {}
         for z in range(0, z_sections):
@@ -151,9 +151,12 @@ class Creature:
                                                       * self.phenotype.structure[1])).tolist())
 
         # Update fitness values for current episode
-        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"fitness_xyz": str(self.fitness_xyz)})
-        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"fitness_eval": self.fitness_eval})
-        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)].update({"average_forces": str(self.average_forces.tolist())})
+        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)]\
+            .update({"fitness_xyz": str(self.fitness_xyz)})
+        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)]\
+            .update({"fitness_eval": self.fitness_eval})
+        self.evolution["gen_" + str(self.generation)]["ep_" + str(self.episode)]\
+            .update({"average_forces": str(self.average_forces.tolist())})
 
     def update_morphology(self, new_stiffness_array=None):
         # Updates creatures stiffness and morphology dependant on stiffness values
@@ -206,23 +209,25 @@ class Creature:
         tag_y = "<normDistY>(.*)</normDistY>"
         tag_z = "<normDistZ>(.*)</normDistZ>"
 
-        with open(self.fitness_file_name, "r") as fitness_file:
-            read_file = fitness_file.read()
+        while True:
             tic = time.time()
-            while True:
+            with open(self.fitness_file_name, "r") as fitness_file:
+                read_file = fitness_file.read()
                 x_match = re.search(tag_x, read_file)
                 y_match = re.search(tag_y, read_file)
                 z_match = re.search(tag_z, read_file)
-                if x_match and y_match and z_match:
-                    result_x = float(x_match.group(1))
-                    result_y = float(y_match.group(1))
-                    result_z = float(z_match.group(1))
-                    break
-                toc = time.time() - tic
-                if toc > 120:
-                    raise Exception("Error while importing data from fitness evaluation. Fitness file name: "
-                                    + self.fitness_file_name)
-        fitness_file.close()
+            fitness_file.close()
+
+            if x_match and y_match and z_match:
+                result_x = float(x_match.group(1))
+                result_y = float(y_match.group(1))
+                result_z = float(z_match.group(1))
+                break
+            time.sleep(1)
+            toc = time.time() - tic
+            if toc > 120:
+                raise Exception("Error while importing data from fitness evaluation. Fitness file name: "
+                                + self.fitness_file_name)
 
         # Save fitness values
         self.fitness_xyz = [result_x, result_y, result_z]
@@ -237,7 +242,8 @@ class Creature:
         displacement_delta = self.fitness_eval - self.previous_fitness
 
         # Average forces
-        average_forces = np.zeros((self.phenotype.structure[2], self.phenotype.structure[0], self.phenotype.structure[1]))
+        average_forces = np.zeros(
+            (self.phenotype.structure[2], self.phenotype.structure[0], self.phenotype.structure[1]))
 
         # Format KE file
         with open(self.ke_file_name) as kef:
@@ -327,7 +333,8 @@ class Creature:
                                   set_new_stiffness=None, reduce_stiffness=None, increase_stiffness=None):
         # If no stiffness change provided stop simulation
         if not any((multiply_stiffness, divide_stiffness, set_new_stiffness, reduce_stiffness, increase_stiffness)):
-            raise Exception("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
+            raise Exception("ERROR: You must provide some for of stiffness change "
+                            "for spherical_region_stiffness_change")
 
         if isinstance(sections, tuple):
             sections = list(sections)
@@ -404,7 +411,8 @@ class Creature:
 
         # If no stiffness change provided stop simulation
         if not any((multiply_stiffness, divide_stiffness, set_new_stiffness, reduce_stiffness, increase_stiffness)):
-            raise Exception("ERROR: You must provide some for of stiffness change for spherical_region_stiffness_change")
+            raise Exception("ERROR: You must provide some for of stiffness change"
+                            " for spherical_region_stiffness_change")
 
         # Get list of voxels in radius
         voxels_in_radius = self.find_voxels_in_radius(centre_voxel_coordinates, radius)
