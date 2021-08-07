@@ -12,7 +12,7 @@ if __name__ == "__main__":
                                                                                          .full_population)
         damaged_population_dict = {crt.name: crt for crt in undamaged_population_sorted[0:num_creatures_to_damage]}
 
-        damaged_population = Population(population=damaged_population_dict, damaged_population=True, reset_evolution=True)
+        damaged_population = Population(population=damaged_population_dict, is_damaged=True, reset_evolution=True)
 
         # List of damage types and their arguments:
         #

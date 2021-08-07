@@ -14,8 +14,8 @@ class NeuralNet:
         self.parameters = None          # NN parameters, weights and biases
 
         # Define NN parameters here
-        self.activation_function = self.settings["activation_function"]     # desired activation function, than or sigmoid
-        self.n_x = self.settings["num_inputs"]                             # number of desired inputs to the nn
+        self.activation_function = self.settings["activation_function"]     # desired activation function
+        self.n_x = self.settings["num_inputs"]                              # number of desired inputs to the nn
         self.n_y = self.settings["num_outputs"]                             # number of desired outputs from the nn
         self.n_h = self.settings["num_hidden_layers"]                       # number of nodes in hidden layers
         self.bounds = self.settings["bounds"]                               # upper and lower bounds for parameters
@@ -24,27 +24,28 @@ class NeuralNet:
         # Create NN
         self.parameters = self.initialize_parameters()
 
-    def sigmoid(self, X):
+    @staticmethod
+    def sigmoid(x_inputs):
         # calculates sigmoid
         # ARGUMENTS:
-        # X - scalar or numpy array of any size
+        # x_inputs - scalar or numpy array of any size
         #
         # RETURNS:
-        # S - scalar or array of X
+        # sig - scalar or array of x_inputs
 
         # assert correct input
-        assert isinstance(X, int) or isinstance(X, np.ndarray)
+        assert isinstance(x_inputs, int) or isinstance(x_inputs, np.ndarray)
 
-        S = 1/(1 + np.exp(-X))
+        sig = 1/(1 + np.exp(-x_inputs))
 
-        return S
+        return sig
 
     def initialize_parameters(self):
         # Sets initial weight matrixes to random values between plus and minus the bounds.
         # Biases initialised to zeros.
 
         # ARGUMENTS:
-        # n_x: length of input layer X.
+        # n_x: length of input layer x_inputs.
         # n_y: length of output layer Y.
         # n_h: length of hidden layer A.
         # bounds: upper and lower bounds for parameters
@@ -81,11 +82,11 @@ class NeuralNet:
 
         return init_params
 
-    def forward_propagation(self, *X):
+    def forward_propagation(self, *x_inputs):
         # Retrieves parameters and inputs and computes the forward propagation
 
         # ARGUMENTS:
-        # X - input data size (n_x, 1)
+        # x_inputs - input data size (n_x, 1)
         # Parameters - python dictionary with weight and biases
         # af - either t or s, used to choose which activation function to use
 
@@ -94,11 +95,11 @@ class NeuralNet:
         # cache - python dictionary containing (Z1, Z2, A1, Y)
 
         # Assert correct inputs
-        if isinstance(X, tuple):
-            X = list(X)
-        if isinstance(X, list):
-            X = np.array(X).reshape(len(X), 1)
-        assert isinstance(X, np.ndarray)
+        if isinstance(x_inputs, tuple):
+            x_inputs = list(x_inputs)
+        if isinstance(x_inputs, list):
+            x_inputs = np.array(x_inputs).reshape(len(x_inputs), 1)
+        assert isinstance(x_inputs, np.ndarray)
         assert isinstance(self.parameters, dict)
         assert self.activation_function.lower() == "sigmoid" or self.activation_function.lower() == "tanh"
 
@@ -109,7 +110,7 @@ class NeuralNet:
         b2 = self.parameters["b2"]
 
         # Forward propagation
-        Z1 = np.dot(w1, X) + b1
+        Z1 = np.dot(w1, x_inputs) + b1
 
         if self.activation_function.lower() == "sigmoid":
             A1 = self.sigmoid(Z1)
@@ -122,7 +123,7 @@ class NeuralNet:
         else:
             raise Exception("ERROR: Unknown activation function.")
 
-        assert (Y.shape == (w2.shape[0], X.shape[1]))
+        assert (Y.shape == (w2.shape[0], x_inputs.shape[1]))
 
         cache = {"Z1": Z1, "A1": A1, "Z2": Z2, "Y": Y}
 

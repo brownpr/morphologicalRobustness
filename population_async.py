@@ -27,9 +27,9 @@ class Population:
             self.is_damaged = is_damaged    # bool, has population been damaged?
             self.damage_type = None                         # string, what type of damage has been inflicted on creature
             self.damage_arguments = None                    # Previously used arguments (all creatures created in a damaged
-            #                                                   population will receive the same damage as the originals)
+            #                                                 population will receive the same damage as the originals)
 
-            # Create an example creature to copy from (as many parameters don't change when creating an additional creature)
+            # Create an example creature to copy from (most parameters don't change when creating additional creatures)
             self.base_creature = Creature(name="base_creature")
             self.base_creature.set_neighbours_and_sections()
 
@@ -60,10 +60,10 @@ class Population:
                 raise Exception("You are loading a population which does not share the same damage type."
                                 "The population you are creating has damage set to: " + str(is_damaged) +
                                 " The population you are loading has damage set to: " + str(self.is_damaged) +
-                                " Please make sure you are creating a population with the same damage type as the " \
+                                " Please make sure you are creating a population with the same damage type as the "
                                 "population you are creating.")
 
-            self.damage_type = loaded_population.damage_type                # string, what type of damage has been inflicted on creature
+            self.damage_type = loaded_population.damage_type                # string, type of damage has been inflicted on creature
             self.damage_arguments = loaded_population.damage_arguments      # Previously used arguments (all creatures created in a damaged
             #                                                               population will receive the same damage as the originals)
 
@@ -256,7 +256,8 @@ class Population:
             pickle.dump(self, w_file)
         w_file.close()
 
-    def load_population(self):
+    @staticmethod
+    def load_population():
         with open("previous_population.pkl", "rb") as file:
             loaded_pop = pickle.load(file)
         file.close()

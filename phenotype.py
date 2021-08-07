@@ -422,11 +422,12 @@ class Phenotype:
             post_text = '''        </Stiffness>'''
             stiffness_text = pre_text + "\n" + offset_text + "\n" + post_text
 
-            end_text = '''
-            </Structure>
-            </VXC>
-            </VXA>'''
         else:
-            stiffness_array = ""
+            stiffness_text = ""
+
+        end_text = '''
+        </Structure>
+        </VXC>
+        </VXA>'''
 
         self.vxa_file = init_text + voxel_text + structure_text + phase_offset_text + stiffness_text + end_text

@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import os
 import json
-import numpy
 
 UNDAMAGED_PERFORMANCE_FILE = 'performance_undamaged_evolution.json'
 DAMAGED_PERFORMANCE_FILE = 'performance_damaged_evolution_remove_sect.json'
@@ -125,20 +124,12 @@ def creature_plots(data_folder_fp):
         performance_max_values.append(performance["max"])
         performance_min_values.append(performance["min"])
 
-
-    #
-    # x_labels.reverse()
-    # y_values.reverse()
-    # x_values = range(len(undamaged_creatures_data))
-    #
     plt.plot(performance_x_values, performance_max_values, label="max_performance")
     plt.plot(performance_x_values, performance_min_values, label="min_performance")
     plt.xticks(performance_x_values, performance_x_values, rotation=70)
     plt.grid(color="0.95")
     plt.legend()
     plt.show()
-
-    pass
 
 
 if __name__ == "__main__":
