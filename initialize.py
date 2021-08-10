@@ -1,6 +1,6 @@
 import datetime
 
-from population_async import Population
+from population import Population
 import os
 
 if __name__ == "__main__":
