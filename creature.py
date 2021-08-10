@@ -200,8 +200,6 @@ class Creature:
         # Evaluates creatures fitness by reading the saved fitness file and saves fitness evaluation. Punishes creature
         # for displacement in y axis
 
-        mod = 3  # int, modifier for severity of punishment in y displacement
-
         # Update old fitness with current fitness
         self.previous_fitness = self.fitness_eval
 
@@ -223,7 +221,7 @@ class Creature:
                 result_y = float(y_match.group(1))
                 result_z = float(z_match.group(1))
                 break
-            time.sleep(1)
+            time.sleep(5)
             toc = time.time() - tic
             if toc > 120:
                 raise Exception("Error while importing data from fitness evaluation. Fitness file name: "
@@ -233,7 +231,9 @@ class Creature:
         self.fitness_xyz = [result_x, result_y, result_z]
 
         # Calculate fitness, punish for locomotion that is not in a straight line
-        self.fitness_eval = self.fitness_xyz[0] - self.fitness_xyz[1] * mod
+        self.fitness_eval = (abs(self.fitness_xyz[0]) * self.settings["x_dis_mod"]) + \
+                            (abs(self.fitness_xyz[1]) * self.settings["y_dis_mod"]) + \
+                            (abs(self.fitness_xyz[2]) * self.settings["z_dis_mod"])
 
     def calculate_stiffness(self):
         # Uses artificial neural network to update the creatures morphology and stiffness array.

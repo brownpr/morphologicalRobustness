@@ -7,7 +7,10 @@
             "top": 1,
             "evolve": 0,
             "stiff_delta_mult": 35000,
-            "keep_files": 0
+            "keep_files": 0,
+            "x_dis_mod": 1,
+            "y_dis_mod": 0,
+            "z_dis_mod": 0
       },
       "nn_parameters": {
             "activation_function": "tanh",
