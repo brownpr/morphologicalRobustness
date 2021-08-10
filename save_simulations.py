@@ -14,5 +14,8 @@ if __name__ == "__main__":
         loaded_population = Population(load_population=True)
         loaded_population.save_evolutionary_history()
 
+        print(str(datetime.datetime.now()) + "Saved evolutionary history for "
+              + str(len(loaded_population.full_population)) + " creatures")
+
     except KeyboardInterrupt:
         sys.exit()
