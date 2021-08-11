@@ -231,9 +231,9 @@ class Creature:
         self.fitness_xyz = [result_x, result_y, result_z]
 
         # Calculate fitness, punish for locomotion that is not in a straight line
-        self.fitness_eval = (abs(self.fitness_xyz[0]) * self.settings["x_dis_mod"]) + \
-                            (abs(self.fitness_xyz[1]) * self.settings["y_dis_mod"]) + \
-                            (abs(self.fitness_xyz[2]) * self.settings["z_dis_mod"])
+        self.fitness_eval = (abs(self.fitness_xyz[0]) * self.settings["parameters"]["x_dis_mod"]) + \
+                            (abs(self.fitness_xyz[1]) * self.settings["parameters"]["y_dis_mod"]) + \
+                            (abs(self.fitness_xyz[2]) * self.settings["parameters"]["z_dis_mod"])
 
     def calculate_stiffness(self):
         # Uses artificial neural network to update the creatures morphology and stiffness array.
