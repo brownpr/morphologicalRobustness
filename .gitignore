@@ -1,0 +1,10 @@
+/generated_files
+/backups
+/sculpting
+/old
+/.idea
+*.vxa
+*.xml
+*.csv
+*.iml
+*.pkl
