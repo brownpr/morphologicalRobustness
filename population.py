@@ -26,7 +26,7 @@ class Population:
             self.is_damaged = is_damaged    # bool, has population been damaged?
             self.damage_type = None                         # string, what type of damage has been inflicted on creature
             self.damage_arguments = None                    # Previously used arguments (all creatures created in a damaged
-            #                                                   population will receive the same damage as the originals)
+            #                                                 population will receive the same damage as the originals)
 
             # Create an example creature to copy from (most parameters don't change when creating additional creatures)
             self.base_creature = Creature(name="base_creature")
@@ -134,11 +134,11 @@ class Population:
             # Evaluate population
             self.evaluate_population(generation_num)
 
-            if not generation_num == generation_size - 1:
+            if not generation_num == rng[1] - 1:
                 # Create new population and retrieve top performing creature
-                top_creature = self.new_population()
+                top_creature = self.new_population(return_top_creature=True)
             else:
-                sorted_pop, top_creature = self.sort_population()
+                _, top_creature = self.sort_population()
 
             # Print generation top performers details
             print(str(dt.datetime.now()) + " Finished evaluating population, top performing creature:"
@@ -177,15 +177,15 @@ class Population:
                 creature.evaluate()
 
                 # Common file names
-                gfd = os.path.join(cwd, "generated_files")  # Generated files directory
-                ffp = os.path.join(cwd, creature.fitness_file_name)  # fitness file path
-                pfp = os.path.join(cwd, creature.pressures_file_name)  # pressure file path
-                kefp = os.path.join(cwd, creature.ke_file_name)  # ke file path
-                sfp = os.path.join(cwd, creature.strain_file_name)  # strain file path
+                gfd = os.path.join(cwd, "generated_files")                  # Generated files directory
+                ffp = os.path.join(cwd, creature.fitness_file_name)         # fitness file path
+                pfp = os.path.join(cwd, creature.pressures_file_name)       # pressure file path
+                kefp = os.path.join(cwd, creature.ke_file_name)             # ke file path
+                sfp = os.path.join(cwd, creature.strain_file_name)          # strain file path
 
                 # wait for file to appear, if two minutes passes and there is no file raise exception
                 t = time.time()
-                while (not os.path.exists(pfp)) or (not os.path.exists(ffp)):
+                while not os.path.exists(pfp) or not os.path.exists(ffp):
                     time.sleep(1)
                     toc = time.time() - t
                     if toc > 300:
@@ -211,19 +211,22 @@ class Population:
                 if not os.path.exists(ccf):
                     os.mkdir(ccf)
 
-                cgf = os.path.join(ccf, "gen_" + str(generation_number))  # current generation folder
-                if not os.path.exists(cgf):
-                    os.mkdir(cgf)
+                if self.settings["files"]["folders_per_generation"]:
+                    cgf = os.path.join(ccf, "gen_" + str(generation_number))  # current generation folder
+                    if not os.path.exists(cgf):
+                        os.mkdir(cgf)
+                else:
+                    cgf = ccf
 
-                cef = os.path.join(cgf, "ep_" + str(episode))  # current episode folder
-                if not os.path.exists(cef):
-                    os.mkdir(cef)
+                if self.settings["files"]["folders_per_episode"]:
+                    cef = os.path.join(cgf, "ep_" + str(episode))  # current episode folder
+                    if not os.path.exists(cef):
+                        os.mkdir(cef)
+                else:
+                    cef = cgf
 
-                # Move created creature files to corresponding episode folder
-                shutil.move(vxa_file_path, cef)
-                shutil.move(ffp, cef)
                 # Keep or delete pressure, kinetic energy and strain files
-                if self.settings["parameters"]["keep_files"]:
+                if self.settings["files"]["keep_csv_files"]:
                     shutil.move(pfp, cef)
                     shutil.move(kefp, cef)
                     shutil.move(sfp, cef)
@@ -231,6 +234,18 @@ class Population:
                     os.remove(pfp)
                     os.remove(kefp)
                     os.remove(sfp)
+
+                # keep or remove fitness evaluation files
+                if self.settings["files"]["keep_fitness_files"]:
+                    shutil.move(ffp, cef)
+                else:
+                    os.remove(ffp)
+
+                # Keep or remove vxa files
+                if self.settings["files"]["keep_vxa_files"]:
+                    shutil.move(vxa_file_path, cef)
+                else:
+                    os.remove(vxa_file_path)
 
                 # If at last episode, reset morphology and stiffness
                 if episode == self.settings["parameters"]["ep_size"] - 1:
@@ -250,7 +265,7 @@ class Population:
         file.close()
         return loaded_pop
 
-    def new_population(self):
+    def new_population(self, return_top_creature=False):
         # Function sorts previously evaluated population and selects top performers, evolves the neural network of a
         # a selected few and creates new creatures. These are joined into one dictionary for further evaluation
         #
@@ -288,10 +303,10 @@ class Population:
         self.population.update({creature.name: creature.update_neural_network(return_self=True)
                                 for creature in sorted_pop[top:evolve + top]})
 
-        # Top creature
-        top_creature = sorted_pop[0]
-
-        return top_creature
+        if return_top_creature:
+            # Top creature
+            top_creature = sorted_pop[0]
+            return top_creature
 
     def sort_population(self, population=None):
         # If pop not specified used self.population
