@@ -1,7 +1,7 @@
 import datetime
 import sys
 
-from population import Population
+from population_async import Population
 import os
 
 if __name__ == "__main__":
