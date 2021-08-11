@@ -1,7 +1,7 @@
 import datetime
 import sys
 
-from population_async import Population
+from population import Population
 import os
 
 if __name__ == "__main__":
@@ -13,6 +13,10 @@ if __name__ == "__main__":
 
         loaded_population = Population(load_population=True)
 
+        # Create new population to evaluate
+        loaded_population.new_population()
+
+        # Evaluate population
         loaded_population.run_genetic_algorithm()
         loaded_population.save_population()
 
