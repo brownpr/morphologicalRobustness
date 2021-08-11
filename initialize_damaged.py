@@ -1,7 +1,6 @@
 import datetime
 
 from population_async import Population
-import os
 
 if __name__ == "__main__":
     try:
