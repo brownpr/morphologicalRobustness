@@ -4,7 +4,6 @@ import datetime as dt
 import sys
 import pickle
 import operator
-import subprocess as sub
 import time
 import shutil
 from copy import deepcopy
