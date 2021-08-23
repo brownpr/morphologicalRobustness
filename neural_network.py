@@ -151,24 +151,24 @@ class NeuralNet:
         b2 = self.parameters["b2"]
 
         # Create a multiplier to increase, decrease or leave parameter alone by given amount
-        w1_change = np.add(np.ones(w1.shape), np.multiply(np.random.randint(low=-1, high=2, size=w1.shape),
-                                                          self.settings["parameter_change"]))
-        w2_change = np.add(np.ones(w2.shape), np.multiply(np.random.randint(low=-1, high=2, size=w2.shape),
-                                                          self.settings["parameter_change"]))
-        b1_change = np.add(np.ones(b1.shape), np.multiply(np.random.randint(low=-1, high=2, size=b1.shape),
-                                                          self.settings["parameter_change"]))
-        b2_change = np.add(np.ones(b2.shape), np.multiply(np.random.randint(low=-1, high=2, size=b2.shape),
-                                                          self.settings["parameter_change"]))
+        w1_change = np.multiply(self.settings["parameter_change"],
+                                np.multiply(np.random.randint(low=-1, high=2, size=w1.shape), self.bounds[1]))
+        w2_change = np.multiply(self.settings["parameter_change"],
+                                np.multiply(np.random.randint(low=-1, high=2, size=w2.shape), self.bounds[1]))
+        b1_change = np.multiply(self.settings["parameter_change"],
+                                np.multiply(np.random.randint(low=-1, high=2, size=b1.shape), self.bounds[1]))
+        b2_change = np.multiply(self.settings["parameter_change"],
+                                np.multiply(np.random.randint(low=-1, high=2, size=b2.shape), self.bounds[1]))
 
         # Increase parameters by multiplier and add noise
-        w1 = np.multiply(w1, w1_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
-                                                                        size=list(w1.shape)), self.noise)
-        w2 = np.multiply(w2, w2_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
-                                                                        size=list(w2.shape)), self.noise)
-        b1 = np.multiply(b1, b1_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
-                                                                        size=list(b1.shape)), self.noise)
-        b2 = np.multiply(b2, b2_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
-                                                                        size=list(b2.shape)), self.noise)
+        w1 = np.add(w1, w1_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
+                                                                   size=list(w1.shape)), self.noise)
+        w2 = np.add(w2, w2_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
+                                                                   size=list(w2.shape)), self.noise)
+        b1 = np.add(b1, b1_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
+                                                                   size=list(b1.shape)), self.noise)
+        b2 = np.add(b2, b2_change) + np.multiply(np.random.uniform(low=self.bounds[0], high=self.bounds[1],
+                                                                   size=list(b2.shape)), self.noise)
 
         # dict of updated parameters
         updated_params = {"w1": w1, "b1": b1, "w2": w2, "b2": b2}
