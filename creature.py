@@ -230,10 +230,26 @@ class Creature:
         # Save fitness values
         self.fitness_xyz = [result_x, result_y, result_z]
 
+        if self.settings["fitness_evaluation"]["take_absolutes"][0]:
+            result_x = abs(result_x)
+        if self.settings["fitness_evaluation"]["take_absolutes"][1]:
+            result_y = abs(result_y)
+        if self.settings["fitness_evaluation"]["take_absolutes"][2]:
+            result_z = abs(result_z)
+
+        m = self.settings["fitness_evaluation"]["M"]
+        m_x = self.settings["fitness_evaluation"]["Mx"]
+        m_y = self.settings["fitness_evaluation"]["My"]
+        m_z = self.settings["fitness_evaluation"]["Mz"]
+        n = self.settings["fitness_evaluation"]["N"]
+        n_x = self.settings["fitness_evaluation"]["Nx"]
+        n_y = self.settings["fitness_evaluation"]["Ny"]
+        n_z = self.settings["fitness_evaluation"]["Nz"]
+
         # Calculate fitness, punish for locomotion that is not in a straight line
-        self.fitness_eval = (abs(self.fitness_xyz[0]) * self.settings["parameters"]["x_dis_mod"]) + \
-                            (abs(self.fitness_xyz[1]) * self.settings["parameters"]["y_dis_mod"]) + \
-                            (abs(self.fitness_xyz[2]) * self.settings["parameters"]["z_dis_mod"])
+        self.fitness_eval = m * (m_x * (result_x**n_x) +
+                                 m_y * (result_y**n_y) +
+                                 m_z * (result_z**n_z))**n
 
     def calculate_stiffness(self):
         # Uses artificial neural network to update the creatures morphology and stiffness array.

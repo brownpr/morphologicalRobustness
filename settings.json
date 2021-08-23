@@ -4,12 +4,20 @@
             "pop_size": 50,
             "ep_size": 15,
             "gen_size": 25,
-            "top": 1,
-            "evolve": 0,
-            "stiff_delta_mult": 35000,
-            "x_dis_mod": 1,
-            "y_dis_mod": 0,
-            "z_dis_mod": 0
+            "top": 10,
+            "evolve": 30,
+            "stiff_delta_mult": 35000
+      },
+      "fitness_evaluation": {
+            "M": 1,
+            "N": 0.5,
+            "Nx": 2,
+            "Mx": 1,
+            "Ny": 2,
+            "My": 1,
+            "Nz": 2,
+            "Mz": 0,
+            "take_absolutes": [1, 1, 1]
       },
       "files": {
             "keep_csv_files": 0,
