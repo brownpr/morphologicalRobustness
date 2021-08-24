@@ -7,6 +7,7 @@ import operator
 import time
 import shutil
 from copy import deepcopy
+import warnings
 
 from creature import Creature
 
@@ -136,13 +137,16 @@ class Population:
 
             if not generation_num == rng[1] - 1:
                 # Create new population and retrieve top performing creature
-                top_creature = self.new_population(return_top_creature=True)
+                top_creature = self.new_population()
             else:
                 _, top_creature = self.sort_population()
 
             # Print generation top performers details
             print(str(dt.datetime.now()) + " Finished evaluating population, top performing creature:"
-                  + top_creature.name + ". Fitness: " + str(top_creature.fitness_eval))
+                  + top_creature.name + ". Fitness: "
+                  + str(top_creature.evolution["gen_" + str(generation_num)]
+                        ["ep_" + str(self.settings["parameters"]["ep_size"] - 1)]["fitness_eval"])
+                  )
 
             self.last_generation = generation_num
 
@@ -265,7 +269,7 @@ class Population:
         file.close()
         return loaded_pop
 
-    def new_population(self, return_top_creature=False):
+    def new_population(self):
         # Function sorts previously evaluated population and selects top performers, evolves the neural network of a
         # a selected few and creates new creatures. These are joined into one dictionary for further evaluation
         #
@@ -281,7 +285,7 @@ class Population:
             raise Exception("ERROR in settings.json: please ensure that the sum of 'top' and 'evolve' is less than or "
                             "equal to the population size.")
         elif (top + evolve) == population_size:
-            raise Warning("WARNING: in settings.json the sum of 'top' and 'evolve' equals population size, no new"
+            warnings.warn("In settings.json the sum of 'top' and 'evolve' equals population size, no new"
                           "creatures will be generated.")
 
         # Sort population
@@ -303,10 +307,10 @@ class Population:
         self.population.update({creature.name: creature.update_neural_network(return_self=True)
                                 for creature in sorted_pop[top:evolve + top]})
 
-        if return_top_creature:
-            # Top creature
-            top_creature = sorted_pop[0]
-            return top_creature
+        # Top creature
+        top_creature = sorted_pop[0]
+
+        return top_creature
 
     def sort_population(self, population=None):
         # If pop not specified used self.population

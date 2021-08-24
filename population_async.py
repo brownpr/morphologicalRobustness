@@ -7,6 +7,7 @@ import time
 import shutil
 import operator
 import multiprocessing
+import warnings
 from copy import deepcopy
 
 from creature import Creature
@@ -143,7 +144,10 @@ class Population:
 
             # Print generation top performers details
             print(str(dt.datetime.now()) + " Finished evaluating population, top performing creature:"
-                  + top_creature.name + ". Fitness: " + str(top_creature.fitness_eval))
+                  + top_creature.name + ". Fitness: "
+                  + str(top_creature.evolution["gen_" + str(generation_num)]
+                        ["ep_" + str(self.settings["parameters"]["ep_size"] - 1)]["fitness_eval"])
+                  )
 
             self.last_generation = generation_num
 
@@ -205,9 +209,6 @@ class Population:
                         raise Exception("ERROR: No pressure file or fitness file for " + creature.name +
                                         "found after 300 seconds. This error is commonly due to problems in the created"
                                         " vxa file.")
-
-                # Update creature fitness
-                creature.calculate_fitness()
 
                 # occasionally an error occurs and results return 0, if so, re-run for up to 60s
                 t = time.time()
@@ -294,7 +295,7 @@ class Population:
             raise Exception("ERROR in settings.json: please ensure that the sum of 'top' and 'evolve' is less than or "
                             "equal to the population size.")
         elif (top + evolve) == population_size:
-            raise Warning("WARNING: in settings.json the sum of 'top' and 'evolve' equals population size, no new"
+            warnings.warn("In settings.json the sum of 'top' and 'evolve' equals population size, no new"
                           "creatures will be generated.")
 
         # Sort population
