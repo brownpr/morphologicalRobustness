@@ -1,8 +1,10 @@
 import csv
 import json
+import os
 import subprocess as sub
 import re
 import time
+import warnings
 
 import numpy as np
 
@@ -13,6 +15,7 @@ from neural_network import NeuralNet
 
 class Creature:
     def __init__(self, index=None, name=None):
+
         # When called initializes creature file, setting default values to creature.
         # ARGUMENTS
         # - index                                                   int, index item for creature naming
@@ -35,7 +38,7 @@ class Creature:
         if name:
             self.name = name                                        # string, Set creature's name
         elif not index:
-            raise Warning("SIMULATION STOPPED. When creating a creature, you must provide either name or index!")
+            raise Exception("SIMULATION STOPPED. When creating a creature, you must provide either name or index!")
         else:
             self.name = "_creature" + str(index)                    # string, Set creature's name
 
@@ -301,8 +304,8 @@ class Creature:
 
     def find_voxels_in_radius(self, centre_voxel_coordinates, radius):
         if radius == 1:
-            raise Warning("WARNING: remove_spherical_region radius input of 1 will only remove the centre voxel and "
-                          "none of its neighbours.")
+            warnings.warn("The remove_spherical_region parameter was set to 1. This will only remove the centre voxel"
+                          " and none of its neighbours.")
         elif radius < 1:
             raise Exception("ERROR: Cannot have a radius less than 1.")
 
@@ -323,6 +326,9 @@ class Creature:
     def reset_morphology(self):
         # reset morphology and stiffness to initial conditions
         self.update_morphology(self.initial_stiffness)
+
+        # reset fitness evaluation
+        self.fitness_eval = 0
 
     def evaluate(self):
         # launch simulation
