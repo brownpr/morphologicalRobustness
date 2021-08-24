@@ -9,6 +9,7 @@ LAST_EPISODE_NUMBER = "14"
 cwd = os.getcwd()
 DATA_FOLDER_PATH = os.path.join(cwd, "generated_files")
 
+
 def import_top_performers():
 
     generations = {}
