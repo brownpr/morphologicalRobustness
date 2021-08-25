@@ -143,10 +143,7 @@ class Population:
 
             # Print generation top performers details
             print(str(dt.datetime.now()) + " Finished evaluating population, top performing creature:"
-                  + top_creature.name + ". Fitness: "
-                  + str(top_creature.evolution["gen_" + str(generation_num)]
-                        ["ep_" + str(self.settings["parameters"]["ep_size"] - 1)]["fitness_eval"])
-                  )
+                  + top_creature.name + ". Fitness: " + str(top_creature.fitness_eval))
 
             self.last_generation = generation_num
 

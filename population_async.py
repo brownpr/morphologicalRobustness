@@ -144,10 +144,7 @@ class Population:
 
             # Print generation top performers details
             print(str(dt.datetime.now()) + " Finished evaluating population, top performing creature:"
-                  + top_creature.name + ". Fitness: "
-                  + str(top_creature.evolution["gen_" + str(generation_num)]
-                        ["ep_" + str(self.settings["parameters"]["ep_size"] - 1)]["fitness_eval"])
-                  )
+                  + top_creature.name + ". Fitness: " + str(top_creature.fitness_eval))
 
             self.last_generation = generation_num
 
@@ -169,6 +166,11 @@ class Population:
             processes = []
             # launch subprocesses in asynchronously
             for creature in self.population.values():
+
+                # reset fitness for the first episode
+                if episode == 0:
+                    creature.fitness_eval = 0.0
+
                 # Create VXA file for creature
                 creature.update_vxa(generation_number, episode)
 
@@ -209,6 +211,9 @@ class Population:
                         raise Exception("ERROR: No pressure file or fitness file for " + creature.name +
                                         "found after 300 seconds. This error is commonly due to problems in the created"
                                         " vxa file.")
+
+                # Update creature fitness
+                creature.calculate_fitness()
 
                 # occasionally an error occurs and results return 0, if so, re-run for up to 60s
                 t = time.time()

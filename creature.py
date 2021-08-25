@@ -327,9 +327,6 @@ class Creature:
         # reset morphology and stiffness to initial conditions
         self.update_morphology(self.initial_stiffness)
 
-        # reset fitness evaluation
-        self.fitness_eval = 0
-
     def evaluate(self):
         # launch simulation
         sub.Popen(self.settings["evosoro_path"] + " -f  " + self.current_file_name + ".vxa", shell=True)
