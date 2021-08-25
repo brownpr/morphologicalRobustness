@@ -7,8 +7,8 @@ import time
 import shutil
 import operator
 import multiprocessing
-import warnings
 from copy import deepcopy
+import warnings
 
 from creature import Creature
 
@@ -167,14 +167,14 @@ class Population:
             # launch subprocesses in asynchronously
             for creature in self.population.values():
 
-                # reset fitness for the first episode
+                # reset creature for the first episode
                 if episode == 0:
-                    creature.fitness_eval = 0.0
+                    creature.reset()
 
                 # Create VXA file for creature
                 creature.update_vxa(generation_number, episode)
 
-                # Get file path
+                # Get vxa file path
                 vxa_file_path = os.path.join(cwd, creature.current_file_name + ".vxa")
 
                 # Get file path variables and save vxa
@@ -265,10 +265,6 @@ class Population:
                     shutil.move(vxa_file_path, cef)
                 else:
                     os.remove(vxa_file_path)
-
-                # If at last episode, reset morphology and stiffness
-                if episode == self.settings["parameters"]["ep_size"] - 1:
-                    creature.reset_morphology()
 
     def save_population(self):
         sys.setrecursionlimit(10000)

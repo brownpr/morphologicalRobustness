@@ -323,9 +323,13 @@ class Creature:
 
         return voxels_in_radius
 
-    def reset_morphology(self):
+    def reset(self):
         # reset morphology and stiffness to initial conditions
         self.update_morphology(self.initial_stiffness)
+
+        # reset previous and current fitness evaluation
+        self.fitness_eval = 0.0
+        self.previous_fitness = 0.0
 
     def evaluate(self):
         # launch simulation

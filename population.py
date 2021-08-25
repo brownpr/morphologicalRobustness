@@ -163,6 +163,11 @@ class Population:
         # Start simulations, after each simulation robot undergoes morphological change
         for episode in range(self.settings["parameters"]["ep_size"]):
             for creature in self.population.values():
+
+                # reset creature for the first episode
+                if episode == 0:
+                    creature.reset()
+
                 # Create VXA file for creature
                 creature.update_vxa(generation_number, episode)
 
@@ -247,10 +252,6 @@ class Population:
                     shutil.move(vxa_file_path, cef)
                 else:
                     os.remove(vxa_file_path)
-
-                # If at last episode, reset morphology and stiffness
-                if episode == self.settings["parameters"]["ep_size"] - 1:
-                    creature.reset_morphology()
 
     def save_population(self):
         sys.setrecursionlimit(10000)
