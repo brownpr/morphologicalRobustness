@@ -368,9 +368,7 @@ class Phenotype:
         </Material>'''
 
         morph_array = []
-        for row in self.morphology.reshape((self.settings["structure"]["creature_structure"][2],
-                                           self.settings["structure"]["creature_structure"][1] *
-                                           self.settings["structure"]["creature_structure"][0])):
+        for row in self.morphology.reshape((self.structure[2], self.structure[1] * self.structure[0])):
             temp_text = "".join([str(int(elem)) for elem in row])
             morph_array.append(temp_text)
 
@@ -387,23 +385,13 @@ class Phenotype:
         </Data>\n'''
         structure_text = structure_text + morph_text + end_structure
 
-        offset_array = []
-        offset_base = np.round([np.multiply(1, (-1) * yi * self.phase_offset) for yi in range(self.structure[0])],
-                               decimals=1)
-        offset_vec = offset_base
-        for i in range(self.structure[1] - 1):
-            offset_vec = np.concatenate((offset_vec, offset_base))
-
-        offset_map = offset_vec
-        for j in range(self.structure[2] - 1):
-            offset_map = np.vstack((offset_map, offset_vec))
-
-        for row in offset_map:
-            temp_text = ",".join([str(elem) for elem in row])
-            offset_array.append(temp_text)
+        offset_base = [np.ones((1, self.structure[1]), dtype="float") * float(j) * self.phase_offset
+                       for j in range(self.structure[0])]
+        offset_array = [np.concatenate(offset_base, axis=None) for _ in range(self.structure[2])]
+        offset_text = "\n".join(['''        <Layer><![CDATA[''' + ",".join(map(str, row)) + ''']]></Layer>'''
+                                 for row in np.round_(offset_array, decimals=2)])
 
         pre_text = "        <PhaseOffset>"
-        offset_text = "\n".join(['''        <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in offset_array])
         post_text = "        </PhaseOffset>\n"
 
         phase_offset_text = pre_text + "\n" + offset_text + "\n" + post_text

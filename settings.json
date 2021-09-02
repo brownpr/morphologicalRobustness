@@ -70,6 +70,6 @@
             "mat_colour": ["0,0,1,1", "0,1,0,1", "1,0,0,1", "1,1,0,1", "0,1,1,1", "1,1,1,1", "0,0,0,1"],
             "mechanical_properties": [0, 1e+007, 0, 0, 0, 0, 0, 1e+006, 0.35, 0.00, 1, 0.5, 1],
             "compression_type": "ASCII_READABLE",
-            "phase_offset": 0.1
+            "phase_offset": -0.1
             }
 }
