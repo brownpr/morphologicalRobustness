@@ -1,7 +1,6 @@
-import datetime
-
 from population_async import Population
 import os
+
 
 if __name__ == "__main__":
     try:
@@ -18,10 +17,8 @@ if __name__ == "__main__":
         # Start Genetic Algorithm
         undamaged_population.run_genetic_algorithm()
 
-        # Save population fitness evaluations
+        # Save population to pickle file
         undamaged_population.save_population()
-
-        print(str(datetime.datetime.now()) + "-----FINISHED EVALUATION-----")
 
     except KeyboardInterrupt:
         exit()
