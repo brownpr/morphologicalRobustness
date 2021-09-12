@@ -21,7 +21,6 @@ class Population:
         settings_file.close()
 
         if not load_population:
-
             # When called for first time, creates a new population of creatures.
             self.population = {}                            # dict, Evaluation population
             self.full_population = {}                       # dict, Full population
@@ -45,6 +44,7 @@ class Population:
 
             # Set parameter to remember last evaluation
             self.last_generation = 0
+            self.average_episode_duration = 0
 
         else:
             loaded_population = self.load_population()                      # Load population
@@ -71,6 +71,7 @@ class Population:
             self.base_creature = loaded_population.base_creature            # Example creature
 
             self.last_generation = loaded_population.last_generation
+            self.average_episode_duration = 0
 
         # If reset_evolution, reset evolutionary history
         if reset_evolution:
@@ -106,19 +107,12 @@ class Population:
             self.population = self.inflict_damage(self.damage_type, self.damage_arguments)
 
     def run_genetic_algorithm(self, generation_size=None):
+        tic = time.time()
         # Runs genetic algorithm by evaluating each creature and then changing their morphology accordingly
 
         # Retrieve parameters
         if generation_size is None:
             generation_size = self.settings["parameters"]["gen_size"]
-
-        # Print Creature Genomes
-        if self.is_damaged:
-            print(str(dt.datetime.now()) + " INITIAL DAMAGED POPULATION: ")
-        else:
-            print(str(dt.datetime.now()) + " INITIAL UNDAMAGED POPULATION: ")
-
-        print([str(creature.name) for creature in self.population.values()])
 
         if self.last_generation == 0:
             rng = (0, generation_size)
@@ -126,7 +120,9 @@ class Population:
             rng = (self.last_generation + 1, self.last_generation + 1 + generation_size)
 
         # Initialize genetic algorithm
+        gen_times = []
         for generation_num in range(rng[0], rng[1]):
+            gen_tic = time.time()
             # Provide user with generation number
             print(str(dt.datetime.now()) + " CURRENT GENERATION NUMBER: " + str(generation_num))
             # Print list of creatures under evaluation
@@ -147,12 +143,33 @@ class Population:
                   + top_creature.name + ". Fitness: " + str(top_creature.fitness_eval))
 
             self.last_generation = generation_num
+            gen_times.append(time.time() - tic)
+
+        average_generation_time = sum(gen_times)/generation_size
 
         if self.is_damaged:
-            print(str(dt.datetime.now()) + " FINISHED SIMULATIONS FOR " + self.damage_type.upper() +
-                  " DAMAGED CREATURES.")
+            print(str(dt.datetime.now()) + " FINISHED SIMULATIONS FOR DAMAGED POPULATION")
         else:
-            print(str(dt.datetime.now()) + " FINISHED SIMULATIONS FOR UNDAMAGED CREATURES.")
+            print(str(dt.datetime.now()) + " FINISHED SIMULATIONS FOR UNDAMAGED POPULATION")
+        print(str(dt.datetime.now()) + " SIMULATION INFORMATION: ")
+        print(str(dt.datetime.now()) + "     * Number of creatures evaluated:   " +
+              str(len(self.full_population)))
+        print(str(dt.datetime.now()) + "     * Population size:                 " +
+              str(self.settings["parameters"]["pop_size"]))
+        print(str(dt.datetime.now()) + "     * Generations:                     " +
+              str(self.settings["parameters"]["gen_size"]))
+        print(str(dt.datetime.now()) + "     * Episodes per generation:         " +
+              str(self.settings["parameters"]["ep_size"]))
+        print(str(dt.datetime.now()) + "     * Top pop. performers kept per ep: " +
+              str(self.settings["parameters"]["top"]))
+        print(str(dt.datetime.now()) + "     * Population evolved per episode:  " +
+              str(self.settings["parameters"]["evolve"]))
+        print(str(dt.datetime.now()) + "     * Time taken for simulation:       " +
+              str(dt.timedelta(seconds=time.time() - tic)))
+        print(str(dt.datetime.now()) + "     * Average time per generation:     " +
+              str(dt.timedelta(seconds=average_generation_time)))
+        print(str(dt.datetime.now()) + "     * Average time per episode:        " +
+              str(dt.timedelta(seconds=self.average_episode_duration)))
 
     def evaluate_population(self, generation_number):
         # ARGUMENTS
@@ -163,6 +180,7 @@ class Population:
 
         # Start simulations, after each simulation robot undergoes morphological change
         for episode in range(self.settings["parameters"]["ep_size"]):
+            tic = time.time()
             processes = []
             # launch subprocesses in asynchronously
             for creature in self.population.values():
@@ -265,6 +283,12 @@ class Population:
                     shutil.move(vxa_file_path, cef)
                 else:
                     os.remove(vxa_file_path)
+
+            toc = time.time() - tic
+            if self.average_episode_duration == 0:
+                self.average_episode_duration = toc
+            else:
+                self.average_episode_duration = (self.average_episode_duration + toc)/2
 
     def save_population(self):
         sys.setrecursionlimit(10000)
