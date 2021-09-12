@@ -65,9 +65,6 @@ def evaluate_specific_vxa(creature_name, number_of_evaluations=1):
                 raise Exception("Error while importing data from fitness evaluation. Fitness file name: "
                                 + fitness_file_name)
 
-        # Save fitness values
-        fitness_xyz = [result_x, result_y, result_z]
-
         if SETTINGS["fitness_evaluation"]["take_absolutes"][0]:
             result_x = abs(result_x)
         if SETTINGS["fitness_evaluation"]["take_absolutes"][1]:
@@ -91,17 +88,17 @@ def evaluate_specific_vxa(creature_name, number_of_evaluations=1):
 
         fitness_evaluations.append(fitness_eval)
 
-        os.remove(pfp)
-        os.remove(kefp)
-        os.remove(sfp)
-        os.remove(ffp)
+        # os.remove(pfp)
+        # os.remove(kefp)
+        # os.remove(sfp)
+        # os.remove(ffp)
 
     print(fitness_evaluations)
 
 
 if __name__ == "__main__":
 
-    vxa_files = ["_creature1424_gen144_ep14.vxa", "_creature1424_gen144_ep0.vxa"]
+    vxa_files = ["_creature0_gen0_ep14.vxa"]
 
     for vxa_file in vxa_files:
-        evaluate_specific_vxa(vxa_file, number_of_evaluations=10)
+        evaluate_specific_vxa(vxa_file, number_of_evaluations=1)
