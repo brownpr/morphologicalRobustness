@@ -16,10 +16,10 @@ class Phenotype:
         # Initial morphology
         self.base_morphology = np.array([
             [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
-            [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
-            [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
-            [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
-            [3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3],
+            [3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3],
+            [3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3],
+            [3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3],
+            [3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3,3,3,4,4,3,3],
             [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
         ])
 
@@ -214,8 +214,6 @@ class Phenotype:
         <GravAcc>''' + str(gravAcc) + '''</GravAcc>
         <FloorEnabled>''' + str(floorEnabled) + '''</FloorEnabled>
         <FloorSlope>''' + str(sloped_floor) + '''</FloorSlope>
-        <bump_size>''' + str(bump_size) + '''</bump_size>
-        <bump_seperation>''' + str(bump_sep) + '''</bump_seperation>
         </Gravity>
         <Thermal>
         <TempEnabled>''' + str(tempEnabled) + '''</TempEnabled>
@@ -403,8 +401,8 @@ class Phenotype:
                 stiff_array.append(temp_text)
 
             pre_text = '''        <Stiffness>
-            <MinElasticMod>10000.0</MinElasticMod>
-            <MaxElasticMod>1000000</MaxElasticMod>'''
+        <MinElasticMod>10000.0</MinElasticMod>
+        <MaxElasticMod>1000000</MaxElasticMod>'''
 
             offset_text = "\n".join(['''        <Layer><![CDATA[''' + row + ''']]></Layer>''' for row in stiff_array])
             post_text = '''        </Stiffness>'''
