@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import os
 import json
+from collections import OrderedDict
+from operator import getitem
 
 UNDAMAGED_PERFORMANCE_FILE = 'performance_undamaged_evolution.json'
 DAMAGED_PERFORMANCE_FILE = 'performance_damaged_evolution_remove_sect.json'
@@ -13,6 +15,7 @@ DATA_FOLDER_PATH = os.path.join(cwd, "generated_files")
 def import_top_performers():
 
     generations = {}
+    creatures = {}
     # Data extraction
     for subdir, dirs, files in os.walk(DATA_FOLDER_PATH):
         if CREATURE_FILE in files:
@@ -22,6 +25,8 @@ def import_top_performers():
 
             creature_name = creatures_file.name.replace(CREATURE_FILE, "").replace(DATA_FOLDER_PATH, "") \
                 .replace("\\", "").replace("/", "")
+            creature_performance_list = []
+            creature_max_performance = 0
 
             for gen in creature_data:
 
@@ -39,12 +44,20 @@ def import_top_performers():
                 # get creature performance
                 creature_performance = creature_data[gen]["ep_" + LAST_EPISODE_NUMBER]["fitness_eval"]
 
+                if creature_name not in creatures:
+                    creatures.update({creature_name: {"max": creature_max_performance,
+                                                      "fitnesses": [{gen: creature_performance}]}})
+                else:
+                    if creature_performance > creature_max_performance:
+                        creatures[creature_name]["max"] = creature_performance
+
+                    creatures[creature_name]["fitnesses"].append({gen: creature_performance})
+
                 # If no section for generation, create one
                 if generation not in generations:
                     # As this data is the only one, give it default values for this creature
                     generations.update({generation: {"max": [creature_performance, creature_name],
                                                      "min": [creature_performance, creature_name]}})
-
                 else:
                     if generations[generation]["max"][0] < creature_performance:
                         generations[generation]["max"][0] = creature_performance
@@ -54,7 +67,9 @@ def import_top_performers():
                         generations[generation]["min"][0] = creature_performance
                         generations[generation]["min"][1] = creature_name
 
-    return generations
+
+
+    return generations, creatures
 
 
 def import_creature_performance(creature_name):
@@ -99,7 +114,6 @@ def plot_performance(data):
     
     max_performance = None
     for generation in sorted_generations:
-        performance_act_values.append(data[generation]["max"][0])
         performance_min_values.append(data[generation]["min"][0])
         
         if max_performance is None:
@@ -110,7 +124,6 @@ def plot_performance(data):
         performance_max_values.append(max_performance)
 
     plt.plot(sorted_generations, performance_max_values, label="max_performance")
-    plt.plot(sorted_generations, performance_act_values, label="actual_max_performance")
     plt.plot(sorted_generations, performance_min_values, label="min_performance")
     plt.xticks(sorted_generations[::25], sorted_generations[::25], rotation=70)
     plt.grid(color="0.95")
@@ -147,11 +160,45 @@ def plot_top_performers(data):
     plt.grid(color="0.95")
     plt.legend()
     plt.show()
-    pass
+
+
+def plot_best_performers(creatures, num_creatures, num_gen):
+    a = creatures.items()
+    top_performers = sorted(creatures.items(), key=lambda x: getitem(x[1], "max"))[-num_creatures:]
+    sorted_generations = []
+    gen_str = "gen_" + str(num_gen - 1)
+    for i in range(num_gen):
+        i_str = "gen_" + str(i)
+        while len(i_str) < len(gen_str):
+            i_str = i_str.replace("_", "_0")
+        sorted_generations.append(i_str)
+
+    for creature in top_performers:
+        creature_performance = creature[1]["fitnesses"]
+        for i in range(len(creature_performance)):
+            i_str = creature_performance[i].keys()[0]
+            init_str = i_str
+            a = len(i_str)
+            b = len(gen_str)
+            while len(i_str) < len(gen_str):
+                i_str = i_str.replace("_", "_0")
+            creature_performance[i][i_str] = creature_performance[i].pop(init_str)
+
+        creature_performance = sorted(creature_performance)
+        creature_lifespan = [x.keys()[0] for x in creature_performance]
+        creature_fitness = [x.values()[0] for x in creature_performance]
+
+        plt.plot(creature_lifespan, creature_fitness, label=creature[0].replace("_", ""))
+
+    plt.xticks(sorted_generations[::25], sorted_generations[::25], rotation=70)
+    plt.grid(color="0.95")
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
-    performance_data = import_top_performers()
+    performance_data, creature_data = import_top_performers()
 
-    # plot_performance(performance_data)
+    plot_best_performers(creature_data, 5, 150)
+    plot_performance(performance_data)
     plot_top_performers(performance_data)
