@@ -19,13 +19,14 @@ IMPORTANT: Within the `settings.json` file, ensure the `"evosoro_path"` root is 
 While in the working directory run `python initialize.py`.
 
 # Retrieving Results
+A folder called `generated_files` was created during the simulation. Within these you will see all the saved data for this simulation. In the settings.json file, detailed bellow, you can enable or disable file saving. 
 
-A folder called `generated_files` was created during the simulation. Within these you will see all the saved data for this simulation. 
+If you use the population.py class function pop_name.save_population() a pickle file will be saved as an instance of your population class. You can load this population at any time with loaded_pop = Population(..., load_pop=True). 
 
 # Settings.json
 Settings file, most variables have been placed into this settings folder for ease of access and adaptability.
 
-Within the Creature class you will see the initial creatures morphology, this array is of shape (z, x*y) where (x, y, z) are the creatures structure. If you change the length of the creatures base morphology you MUST update the `"creature_structure"` parameter within the settings file. 
+Within the phenotype.py class you will see the base morphology array, this array is of shape (z, x*y) where (x, y, z) are the creatures structure. If you change the base morphology array you MUST update the `"creature_structure"` parameter within the settings file. 
 
 With the settings file open you can edit any of the parameters you wish. If you have a parameter or material property that changes throughout your evolution, you can update it within the code itself.
 
