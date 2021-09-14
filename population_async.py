@@ -78,6 +78,10 @@ class Population:
             for creature in self.population.values():
                 creature.evolution = {}
 
+    def deepcopy(self):
+        copy_slf = deepcopy(self)
+        return copy_slf
+
     def create_new_population(self, population_range):
         # ARGUMENTS:
         # - Range: 1x2 list, (a, b) where a is lower & b upper bound of range of creatures (for naming index)
@@ -290,10 +294,11 @@ class Population:
             else:
                 self.average_episode_duration = (self.average_episode_duration + toc)/2
 
-    def save_population(self):
+    def save_population(self, name="previous_population"):
         sys.setrecursionlimit(10000)
 
-        with open("previous_population.pkl", "wb") as w_file:
+        name = name + ".pkl"
+        with open(name, "wb") as w_file:
             pickle.dump(self, w_file)
         w_file.close()
 
@@ -389,21 +394,30 @@ class Population:
                 json.dump(creature.evolution, creature_file, sort_keys=True, indent=4)
             creature_file.close()
 
-    def inflict_damage(self, damage_type, damage_arguments, population_to_damage=None, damage_base_creature=False):
+    def inflict_damage(self, damage_type, damage_arguments, population_to_damage=None):
 
         if population_to_damage is None:
-            population_to_damage = self.population
+            population_to_damage = self
 
         assert isinstance(damage_type, str)
-        assert isinstance(damage_arguments, list)
         assert isinstance(damage_arguments, list)
 
         # SECTION DAMAGES
         if damage_type == "remove_sect":
             assert len(damage_arguments) == 1
-            assert isinstance(damage_arguments[0], tuple)
-            for creature in population_to_damage.values():
-                creature.remove_voxels_sections(damage_arguments[0])
+            if not isinstance(damage_arguments[0], int):
+                assert isinstance(damage_arguments[0], tuple)
+
+            # Apply damage to base creature of population
+            base_creature = population_to_damage.base_creature
+            base_creature.remove_voxels_sections(damage_arguments[0])
+            base_creature.initial_stiffness = base_creature.stiffness_array
+            base_creature.phenotype.base_morphology = base_creature.phenotype.morphology
+
+            # Set the base morph and stiff for each creature to the base_creature morphology
+            for creature in population_to_damage.population.values():
+                creature.initial_stiffness = base_creature.initial_stiffness
+                creature.phenotype.base_morphology = base_creature.phenotype.base_morphology
 
         elif damage_type == "stiff_sect_mult":
             assert len(damage_arguments) == 2
@@ -512,6 +526,11 @@ class Population:
         self.damage_type = damage_type
         self.damage_arguments = damage_arguments
 
-        # Inflict damage on the base creature.
-        if damage_base_creature:
-            self.inflict_damage(damage_type, damage_arguments, {self.base_creature.name: self.base_creature})
+        # # Inflict damage on the base creature.
+        # if damage_base_creature:
+        #     for creature in population_to_damage.values():
+        #         creature.initial_stiffness = creature.stiffness_array
+        #         creature.phenotype.base_morphology = creature.phenotype.morphology
+        #
+        #     self.base_creature.initial_stiffness = creature.initial_stiffness
+        #     self.base_creature.phenotype.base_morphology = creature.phenotype.base_morphology

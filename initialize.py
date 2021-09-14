@@ -4,11 +4,11 @@ import os
 
 if __name__ == "__main__":
     try:
-        # Create file to save creature files, if file exists stop sim
+        # Create folder to save creature files, if file exists stop sim
         if not os.path.exists("generated_files"):
             os.mkdir("generated_files")
         else:
-            raise Exception("STOPPING SIMULATION: Creature files may already exist. Please delete or "
+            raise Exception("STOPPING SIMULATION: The 'generated_files' folder already exist. Please delete or "
                   "rename the 'generated_files' folder.")
 
         # Create initial undamaged population
